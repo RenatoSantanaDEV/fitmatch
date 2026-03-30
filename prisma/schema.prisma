@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+enum UserRole {
+  STUDENT
+  PROFESSIONAL
+  ADMIN
+}
+
+enum SessionStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum SpecializationType {
+  PERSONAL_TRAINING
+  YOGA
+  PILATES
+  MARTIAL_ARTS
+  CROSSFIT
+  SWIMMING
+  NUTRITION_COACHING
+  DANCE
+  CYCLING
+  REHABILITATION
+  MEDITATION
+  FUNCTIONAL_TRAINING
+}
+
+enum SessionModality {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum AvailabilityRecurrence {
+  ONCE
+  WEEKLY
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  avatarUrl String?
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student      Student?
+  professional Professional?
+
+  @@index([email])
+  @@map("users")
+}
+
+model Student {
+  id                       String               @id @default(cuid())
+  userId                   String               @unique
+  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fitnessGoals             String[]
+  experienceLevel          ExperienceLevel
+  preferredModality        SessionModality
+  preferredSpecializations SpecializationType[]
+  bio                      String?
+  locationStreet  String?
+  locationCity    String?
+  locationState   String?
+  locationCountry String?
+  locationPostal  String?
+  locationLat     Float?
+  locationLng     Float?
+  budgetMin      Int?
+  budgetMax      Int?
+  budgetCurrency String? @default("BRL")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+  reviews  Review[]
+  matches  Match[]
+
+  @@map("students")
+}
+
+model Professional {
+  id                 String               @id @default(cuid())
+  userId             String               @unique
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                String
+  specializations    SpecializationType[]
+  modalities         SessionModality[]
+  yearsExperience    Int
+  isVerified         Boolean              @default(false)
+  isAcceptingClients Boolean              @default(true)
+  averageRating      Float?
+  totalReviews       Int                  @default(0)
+  priceMin      Int
+  priceMax      Int
+  priceCurrency String @default("BRL")
+  locationStreet  String
+  locationCity    String
+  locationState   String
+  locationCountry String
+  locationPostal  String
+  locationLat     Float?
+  locationLng     Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  specializationRecords Specialization[]
+  certifications        Certification[]
+  availabilities        Availability[]
+  sessions              Session[]
+  reviews               Review[]
+  matches               Match[]
+
+  @@index([locationCity, locationState])
+  @@index([isAcceptingClients, averageRating])
+  @@map("professionals")
+}
+
+model Specialization {
+  id                 String             @id @default(cuid())
+  professionalId     String
+  professional       Professional       @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  type               SpecializationType
+  yearsExperience    Int
+  description        String?
+  subSpecializations String[]
+  createdAt          DateTime           @default(now())
+
+  @@unique([professionalId, type])
+  @@map("specializations")
+}
+
+model Certification {
+  id             String       @id @default(cuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  name           String
+  issuingBody    String
+  issueDate      DateTime
+  expiryDate     DateTime?
+  documentUrl    String?
+  isVerified     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@map("certifications")
+}
+
+model Availability {
+  id             String                 @id @default(cuid())
+  professionalId String
+  professional   Professional           @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  dayOfWeek      Int?
+  startTime      DateTime
+  endTime        DateTime
+  recurrence     AvailabilityRecurrence
+  isBooked       Boolean                @default(false)
+  validFrom      DateTime
+  validUntil     DateTime?
+
+  sessions Session[]
+
+  @@index([professionalId, isBooked])
+  @@index([professionalId, startTime, endTime])
+  @@map("availabilities")
+}
+
+model Match {
+  id             String       @id @default(cuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id])
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  score          Float
+  reasoning      String       @db.Text
+  aiModelVersion String
+  status         MatchStatus  @default(PENDING)
+  requestedAt    DateTime     @default(now())
+  respondedAt    DateTime?
+  expiresAt      DateTime
+
+  sessions Session[]
+
+  @@index([studentId, status])
+  @@index([expiresAt])
+  @@map("matches")
+}
+
+model Session {
+  id             String          @id @default(cuid())
+  studentId      String
+  student        Student         @relation(fields: [studentId], references: [id])
+  professionalId String
+  professional   Professional    @relation(fields: [professionalId], references: [id])
+  matchId        String?
+  match          Match?          @relation(fields: [matchId], references: [id])
+  availabilityId String
+  availability   Availability    @relation(fields: [availabilityId], references: [id])
+  startTime      DateTime
+  endTime        DateTime
+  modality       SessionModality
+  priceInCents   Int
+  currency       String          @default("BRL")
+  status         SessionStatus   @default(PENDING)
+  cancellationReason String?
+  cancelledBy        String?
+  completedAt        DateTime?
+  locationStreet  String?
+  locationCity    String?
+  locationState   String?
+  locationCountry String?
+  locationPostal  String?
+
+  onlineMeetingUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review Review?
+
+  @@index([studentId, status])
+  @@index([professionalId, status])
+  @@index([startTime])
+  @@map("sessions")
+}
+
+model Review {
+  id             String       @id @default(cuid())
+  sessionId      String       @unique
+  session        Session      @relation(fields: [sessionId], references: [id])
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id])
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  rating         Int
+  comment        String?      @db.Text
+  isPublic       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([professionalId, isPublic])
+  @@map("reviews")
+}

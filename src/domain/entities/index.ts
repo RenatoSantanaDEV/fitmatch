@@ -1,0 +1,9 @@
+export type { User } from './User';
+export type { Student } from './Student';
+export type { Professional } from './Professional';
+export type { Specialization } from './Specialization';
+export type { Certification } from './Certification';
+export type { Availability } from './Availability';
+export type { Match } from './Match';
+export type { Session } from './Session';
+export type { Review } from './Review';
