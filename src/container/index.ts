@@ -6,10 +6,11 @@ import { PrismaAvailabilityRepository } from '../infrastructure/db/repositories/
 import { PrismaMatchRepository } from '../infrastructure/db/repositories/PrismaMatchRepository';
 import { PrismaSessionRepository } from '../infrastructure/db/repositories/PrismaSessionRepository';
 import { PrismaReviewRepository } from '../infrastructure/db/repositories/PrismaReviewRepository';
-import { HttpMatchingAdapter } from '../infrastructure/ai/HttpMatchingAdapter';
+import { MatchingAdapterFactory } from '../infrastructure/ai/MatchingAdapterFactory';
 import { NoopNotificationAdapter } from '../infrastructure/notifications/NoopNotificationAdapter';
 import { RegisterUserUseCase } from '../application/use-cases/user/RegisterUserUseCase';
 import { RequestMatchUseCase } from '../application/use-cases/match/RequestMatchUseCase';
+import { ListMatchesUseCase } from '../application/use-cases/match/ListMatchesUseCase';
 import { AcceptMatchUseCase } from '../application/use-cases/match/AcceptMatchUseCase';
 import { BookSessionUseCase } from '../application/use-cases/session/BookSessionUseCase';
 import { CancelSessionUseCase } from '../application/use-cases/session/CancelSessionUseCase';
@@ -26,7 +27,7 @@ const availabilityRepo = new PrismaAvailabilityRepository(prisma);
 const matchRepo = new PrismaMatchRepository(prisma);
 const sessionRepo = new PrismaSessionRepository(prisma);
 const reviewRepo = new PrismaReviewRepository(prisma);
-const matchingAdapter = new HttpMatchingAdapter();
+const matchingAdapter = MatchingAdapterFactory.create();
 const notificationAdapter = new NoopNotificationAdapter();
 
 export const registerUserUseCase = new RegisterUserUseCase(userRepo);
@@ -39,7 +40,14 @@ export const requestMatchUseCase = new RequestMatchUseCase(
   notificationAdapter,
 );
 
-export const acceptMatchUseCase = new AcceptMatchUseCase(matchRepo);
+export const acceptMatchUseCase = new AcceptMatchUseCase(matchRepo, studentRepo);
+
+export const listMatchesUseCase = new ListMatchesUseCase(
+  matchRepo,
+  studentRepo,
+  professionalRepo,
+  userRepo,
+);
 
 export const bookSessionUseCase = new BookSessionUseCase(
   sessionRepo,

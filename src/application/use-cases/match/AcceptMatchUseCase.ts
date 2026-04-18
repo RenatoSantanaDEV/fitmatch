@@ -1,15 +1,22 @@
 import { IMatchRepository } from '../../ports/output/IMatchRepository';
+import { IStudentRepository } from '../../ports/output/IStudentRepository';
 import { MatchResponseDTO } from '../../dtos/match/MatchDTO';
 import { MatchStatus } from '../../../domain/enums/MatchStatus';
 import { assertMatchIsRespondable } from '../../../domain/rules/matchRules';
-import { MatchNotFoundError } from '../../../domain/errors/MatchErrors';
+import { MatchNotFoundError, MatchUnauthorizedError } from '../../../domain/errors/MatchErrors';
 
 export class AcceptMatchUseCase {
-  constructor(private readonly matchRepo: IMatchRepository) {}
+  constructor(
+    private readonly matchRepo: IMatchRepository,
+    private readonly studentRepo: IStudentRepository,
+  ) {}
 
-  async execute(matchId: string, _studentId: string): Promise<MatchResponseDTO> {
+  async execute(matchId: string, userId: string): Promise<MatchResponseDTO> {
     const match = await this.matchRepo.findById(matchId);
     if (!match) throw new MatchNotFoundError(matchId);
+
+    const student = await this.studentRepo.findByUserId(userId);
+    if (!student || student.id !== match.studentId) throw new MatchUnauthorizedError(matchId);
 
     assertMatchIsRespondable(match);
 

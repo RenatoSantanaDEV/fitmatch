@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const cuidSchema = z.string().cuid();
+export const cuidSchema = z.string().cuid2();
 
 export const locationSchema = z.object({
   street: z.string().min(1),

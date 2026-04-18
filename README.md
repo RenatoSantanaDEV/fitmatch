@@ -8,7 +8,11 @@ FitMatch solves a real problem: finding the right fitness professional is hard. 
 
 **Professionals** create verified profiles with specializations, certifications, and availability schedules.
 **Students** describe their goals and receive AI-powered personalized recommendations.
-**The AI** runs as a separate service and communicates with this platform through `IMatchingPort`.
+**The AI** runs in-process via a provider-agnostic adapter that talks to any
+OpenAI-compatible endpoint (OpenAI, xAI Grok, Groq, ...). The domain pre-filters
+candidates by hard rules (modality, remote/in-person compatibility, budget,
+specialization overlap) and the LLM is used only to rank and justify. A
+deterministic heuristic adapter is used automatically when no API key is set.
 
 ## Tech Stack
 
@@ -76,10 +80,13 @@ POSTGRES_URL_NON_POOLING="postgresql://user:password@localhost:5432/fitconnect?s
 AUTH_SECRET="generate with: openssl rand -base64 32"
 NEXTAUTH_URL="http://localhost:3000"
 
-# AI Matching API (separate repository)
-AI_API_BASE_URL="http://localhost:8000"
-AI_API_KEY="your-key"
-AI_API_TIMEOUT_MS="10000"
+# AI Matching — any OpenAI-compatible endpoint. Leave AI_API_KEY empty to
+# use the built-in heuristic adapter (no external calls, free).
+AI_PROVIDER="openai"                          # openai | xai | groq | heuristic
+AI_API_BASE_URL="https://api.openai.com/v1"   # https://api.x.ai/v1 (Grok) · https://api.groq.com/openai/v1 (Groq)
+AI_API_KEY=""                                 # sk-... (OpenAI) · xai-... (Grok) · gsk_... (Groq)
+AI_MODEL="gpt-4o-mini"                        # grok-2-latest · llama-3.3-70b-versatile · ...
+AI_API_TIMEOUT_MS="15000"
 ```
 
 ### Database
@@ -88,9 +95,15 @@ AI_API_TIMEOUT_MS="10000"
 # Create and apply migrations
 npx prisma migrate dev --name init
 
+# Seed prototype data (1 student + 6 varied professionals)
+npm run db:seed
+
 # Open database UI (optional)
 npx prisma studio
 ```
+
+After seeding, the script prints the generated `studentId`. Open
+`http://localhost:3000/matches?studentId=<id>` to try the AI matching end-to-end.
 
 ### Development
 
@@ -108,6 +121,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Static analysis with ESLint |
+| `npm run db:seed` | Populate DB with prototype data (1 student + 6 professionals) |
 | `npx tsc --noEmit` | TypeScript type check |
 | `npx prisma migrate dev` | Apply migrations locally |
 | `npx prisma migrate deploy` | Apply migrations in production |
@@ -127,8 +141,11 @@ Under **Settings → Environment Variables**, add:
 ```
 AUTH_SECRET=<openssl rand -base64 32>
 NEXTAUTH_URL=https://your-domain.vercel.app
-AI_API_BASE_URL=https://your-ai-api-url
+AI_PROVIDER=openai
+AI_API_BASE_URL=https://api.openai.com/v1
 AI_API_KEY=<production-key>
+AI_MODEL=gpt-4o-mini
+AI_API_TIMEOUT_MS=15000
 ```
 
 ### 3. Connect the repository
@@ -198,7 +215,17 @@ src/
 
 ## AI Matching Service
 
-The AI-powered matching service lives in a separate repository. The contract between the two systems is defined by:
+The matching engine runs in-process as an implementation of `IMatchingPort`.
+Two adapters live behind the port:
+
+- `LLMMatchingAdapter` — provider-agnostic; talks to any OpenAI-compatible
+  `/chat/completions` endpoint with Structured Outputs (JSON Schema). Switching
+  from ChatGPT to Grok or Groq is just changing `AI_API_BASE_URL` + `AI_MODEL`.
+- `HeuristicMatchingAdapter` — deterministic fallback used automatically when
+  `AI_API_KEY` is empty or `AI_PROVIDER=heuristic`. No external calls, free.
+
+The factory in `src/infrastructure/ai/MatchingAdapterFactory.ts` picks one at
+runtime. The port contract is:
 
 ```typescript
 // src/application/ports/output/IMatchingPort.ts
@@ -206,6 +233,21 @@ interface IMatchingPort {
   findMatches(request: MatchingRequest): Promise<MatchingResult[]>
 }
 ```
+
+Use case flow (retrieval + rerank):
+
+1. `RequestMatchUseCase` pulls a broad pool of accepting professionals from
+   `IProfessionalRepository.list()`.
+2. `prefilterCandidates()` in `src/domain/rules/matchingRules.ts` applies hard
+   rules — modality (online/in-person/hybrid), same-city for in-person,
+   specialization overlap, budget intersection, accepting clients.
+3. The adapter ranks the survivors, produces a 0.0–1.0 score and a short
+   Portuguese justification per match.
+4. Matches with score < 0.5 are hidden (`shouldDisplayMatch`).
+
+The LLM "training" for the prototype happens via the system prompt in
+`src/infrastructure/ai/prompts/matchSystemPrompt.md` — iterating on behavior
+does not require a rebuild.
 
 ## License
 

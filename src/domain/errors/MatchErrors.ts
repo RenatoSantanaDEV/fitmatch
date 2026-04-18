@@ -27,3 +27,10 @@ export class MatchAlreadyRespondedError extends DomainError {
     this.name = 'MatchAlreadyRespondedError';
   }
 }
+
+export class MatchUnauthorizedError extends DomainError {
+  constructor(matchId: string) {
+    super(`Not authorized to respond to match ${matchId}`);
+    this.name = 'MatchUnauthorizedError';
+  }
+}

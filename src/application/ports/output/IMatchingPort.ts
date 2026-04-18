@@ -2,12 +2,12 @@ import { ExperienceLevel } from '../../../domain/enums/ExperienceLevel';
 import { SessionModality } from '../../../domain/enums/SessionModality';
 import { SpecializationType } from '../../../domain/enums/SpecializationType';
 
-export interface MatchingRequest {
-  studentId: string;
+export interface MatchingStudent {
+  id: string;
   fitnessGoals: string[];
   experienceLevel: ExperienceLevel;
-  preferredSpecializations: SpecializationType[];
   preferredModality: SessionModality;
+  preferredSpecializations: SpecializationType[];
   budgetRange?: {
     min: number;
     max: number;
@@ -18,6 +18,27 @@ export interface MatchingRequest {
     state: string;
     country: string;
   };
+  bio?: string;
+}
+
+export interface MatchingCandidate {
+  professionalId: string;
+  bio: string;
+  specializations: SpecializationType[];
+  modalities: SessionModality[];
+  yearsExperience: number;
+  averageRating: number | null;
+  totalReviews: number;
+  priceRange: { min: number; max: number; currency: string };
+  city: string;
+  state: string;
+  country: string;
+  isVerified: boolean;
+}
+
+export interface MatchingRequest {
+  student: MatchingStudent;
+  candidates: MatchingCandidate[];
   maxResults: number;
 }
 

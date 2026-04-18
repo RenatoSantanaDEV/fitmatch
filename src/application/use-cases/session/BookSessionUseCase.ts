@@ -31,6 +31,7 @@ export class BookSessionUseCase {
 
     const slot = await this.availabilityRepo.findById(dto.availabilityId);
     if (!slot) throw new AvailabilityNotFoundError(dto.availabilityId);
+    if (slot.professionalId !== professional.id) throw new AvailabilityNotFoundError(dto.availabilityId);
 
     assertSlotIsAvailable(slot);
 

@@ -18,12 +18,19 @@ export class PrismaUserRepository implements IUserRepository {
     return raw ? UserMapper.toDomain(raw) : null;
   }
 
-  async save(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  async findByEmailForAuth(email: string): Promise<{ user: User; passwordHash: string } | null> {
+    const raw = await this.prisma.user.findUnique({ where: { email } });
+    if (!raw) return null;
+    return { user: UserMapper.toDomain(raw), passwordHash: raw.passwordHash };
+  }
+
+  async save(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>, passwordHash: string): Promise<User> {
     try {
       const raw = await this.prisma.user.create({
         data: {
           email: user.email,
           name: user.name,
+          passwordHash,
           phone: user.phone,
           avatarUrl: user.avatarUrl,
           role: user.role,
