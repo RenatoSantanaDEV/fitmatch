@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { buttonVariants } from '../../components/ui/button-variants';
 
 interface Props {
   userId?: string;
@@ -46,7 +47,11 @@ export function RequestMatchButton({ userId, studentId }: Props) {
         type="button"
         onClick={requestMatch}
         disabled={disabled}
-        className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        className={buttonVariants({
+          variant: 'primary',
+          size: 'compact',
+          className: 'w-fit disabled:cursor-not-allowed',
+        })}
       >
         {disabled ? 'Buscando match com IA...' : 'Pedir novo match'}
       </button>

@@ -31,7 +31,10 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-6 py-12">
       <header className="flex flex-col gap-2">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground transition hover:text-brand"
+        >
           ← Voltar
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Seus matches</h1>
@@ -109,7 +112,7 @@ function MatchCard({ match }: { match: MatchWithProfessionalDTO }) {
           {pro.modalities.map((m) => (
             <span
               key={m}
-              className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-950/60 dark:text-blue-200"
+              className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand"
             >
               {formatEnum(m)}
             </span>

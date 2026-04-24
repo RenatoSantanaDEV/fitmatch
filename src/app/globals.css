@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border-subtle: rgb(228 228 231);
+  --brand: #4338ca;
+  --brand-hover: #3730a3;
+  --brand-foreground: #ffffff;
+  --brand-soft: color-mix(in srgb, var(--brand) 12%, transparent);
+  --brand-glow: color-mix(in srgb, var(--brand) 28%, transparent);
+  --muted: #52525b;
+  --muted-foreground: #71717a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #030303;
+    --foreground: #fafafa;
+    --surface: #0a0a0a;
+    --surface-elevated: #121214;
+    --border-subtle: rgb(39 39 42);
+    --brand: #6366f1;
+    --brand-hover: #818cf8;
+    --brand-foreground: #ffffff;
+    --brand-soft: color-mix(in srgb, var(--brand) 18%, transparent);
+    --brand-glow: color-mix(in srgb, var(--brand) 35%, transparent);
+    --muted: #a1a1aa;
+    --muted-foreground: #a1a1aa;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-subtle: var(--border-subtle);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-glow: var(--brand-glow);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --radius-card: 0.75rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fitmatch-hero-bg {
+  background:
+    radial-gradient(ellipse 100% 80% at 50% -40%, var(--brand-glow), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 0%, var(--brand-soft), transparent 45%),
+    radial-gradient(ellipse 50% 40% at 0% 20%, var(--brand-soft), transparent 50%),
+    var(--background);
+}
+
+.fitmatch-hero-visual-shell {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-elevated);
+  overflow: hidden;
+  min-height: 16rem;
+}
+
+.fitmatch-hero-visual-shell::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(circle at 30% 40%, var(--brand-glow), transparent 42%),
+    radial-gradient(circle at 78% 62%, var(--brand-soft), transparent 48%),
+    radial-gradient(circle at 50% 88%, color-mix(in srgb, var(--brand) 15%, transparent), transparent 40%);
+  z-index: 0;
+}
+
+.fitmatch-hero-visual-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 75%);
+  opacity: 0.45;
+}
+
+.fitmatch-text-ai {
+  background: linear-gradient(
+    105deg,
+    var(--brand) 0%,
+    color-mix(in srgb, var(--brand) 70%, #a855f7) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
