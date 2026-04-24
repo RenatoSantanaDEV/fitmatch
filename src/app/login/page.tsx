@@ -13,14 +13,16 @@ export default function LoginPage() {
   const oauth = getOauthProviderFlags();
 
   return (
-    <main className="fitmatch-hero-bg flex flex-1 flex-col items-center justify-center px-4 py-16">
+    <main className="flex flex-1 flex-col bg-blue-600">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-16">
       <Suspense
         fallback={
-          <div className="h-72 w-full max-w-md animate-pulse rounded-2xl border border-border-subtle bg-surface-elevated/80" />
+          <div className="h-72 w-full max-w-md animate-pulse rounded-2xl bg-blue-500/40" />
         }
       >
         <LoginForm showSeedHint={showSeedHint} oauth={oauth} />
       </Suspense>
+      </div>
     </main>
   );
 }

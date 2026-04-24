@@ -4,55 +4,57 @@ const mockMatches = [
     role: 'Personal Trainer · Híbrido',
     score: 97,
     initials: 'AM',
-    color: '#2563eb',
+    bg: '#2563eb',
+    tagColor: 'bg-blue-100 text-blue-700',
     tag: 'Funcional',
+    rank: 1,
   },
   {
     name: 'João Pereira',
     role: 'Yoga & Meditação · Online',
     score: 89,
     initials: 'JP',
-    color: '#7c3aed',
+    bg: '#7c3aed',
+    tagColor: 'bg-violet-100 text-violet-700',
     tag: 'Yoga',
+    rank: 2,
   },
   {
     name: 'Paula Ribeiro',
     role: 'Personal Online · Nutrição',
     score: 82,
     initials: 'PR',
-    color: '#059669',
+    bg: '#059669',
+    tagColor: 'bg-emerald-100 text-emerald-700',
     tag: 'Nutrição',
+    rank: 3,
   },
 ];
 
-function ScoreRing({ score, size = 48 }: { score: number; size?: number }) {
-  const r = size / 2 - 4;
+function ScoreRing({ score }: { score: number }) {
+  const size = 52;
+  const r = 20;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
+  const color = score >= 85 ? '#2563eb' : score >= 70 ? '#f59e0b' : '#64748b';
+
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth="3.5" />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#e2e8f0"
-          strokeWidth="3"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#2563eb"
-          strokeWidth="3"
+          stroke={color}
+          strokeWidth="3.5"
           strokeDasharray={`${dash} ${circ - dash}`}
           strokeLinecap="round"
           className="score-ring"
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-blue-600">
+      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-700">
         {score}%
       </span>
     </div>
@@ -63,52 +65,57 @@ export function HeroVisual({ compact = false }: { compact?: boolean }) {
   const visible = compact ? mockMatches.slice(0, 2) : mockMatches;
 
   return (
-    <div className="fitmatch-hero-visual-shell w-full p-5">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="w-full overflow-hidden rounded-2xl bg-white shadow-2xl shadow-blue-900/20">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-600">
-            Matches gerados por IA
+          <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600">
+            Matches para você
           </p>
-          <p className="mt-0.5 text-xs text-slate-400">Baseado no seu perfil</p>
+          <p className="mt-0.5 text-xs text-slate-400">Gerado por IA · Agora mesmo</p>
         </div>
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600">
+        <span className="rounded-full bg-blue-600 px-3 py-1 text-[11px] font-bold text-white">
           {mockMatches.length} resultados
         </span>
       </div>
 
-      <div className="flex flex-col gap-2.5">
-        {visible.map((m, i) => (
-          <div
-            key={m.name}
-            className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm transition hover:border-blue-100 hover:shadow"
-          >
+      {/* Cards */}
+      <div className="flex flex-col divide-y divide-slate-100">
+        {visible.map((m) => (
+          <div key={m.name} className="flex items-center gap-4 px-5 py-4">
+            {/* Rank */}
+            <span className="w-4 shrink-0 text-center text-xs font-black text-slate-300">
+              {m.rank}
+            </span>
+            {/* Avatar */}
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: m.color }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white"
+              style={{ backgroundColor: m.bg }}
             >
               {m.initials}
             </div>
+            {/* Info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-semibold text-slate-800">{m.name}</p>
-                {i === 0 && (
-                  <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
-                    #1
-                  </span>
-                )}
+                <p className="truncate text-sm font-bold text-slate-800">{m.name}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${m.tagColor}`}>
+                  {m.tag}
+                </span>
               </div>
               <p className="truncate text-xs text-slate-400">{m.role}</p>
             </div>
-            <ScoreRing score={m.score} size={44} />
+            {/* Score */}
+            <ScoreRing score={m.score} />
           </div>
         ))}
       </div>
 
-      {!compact && (
-        <p className="mt-4 text-center text-xs text-slate-400">
+      {/* Footer */}
+      <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
+        <p className="text-center text-[11px] text-slate-400">
           Cada match vem com justificativa em português
         </p>
-      )}
+      </div>
     </div>
   );
 }
