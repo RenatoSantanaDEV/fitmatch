@@ -5,7 +5,9 @@ import { buttonVariants } from '../ui/button-variants';
 import { FeatureCard } from '../ui/FeatureCard';
 import { HeroVisual } from './HeroVisual';
 
-export function HomePage() {
+const loginToMatchesHref = `/login?${new URLSearchParams({ callbackUrl: '/matches' }).toString()}`;
+
+export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <main className="fitmatch-hero-bg flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
@@ -17,23 +19,35 @@ export function HomePage() {
 
             <div className="space-y-3">
               <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                FitMatch
+                Encontre o professor certo para você
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Conectamos alunos e profissionais de educação física através de{' '}
-                <span className="fitmatch-text-ai font-semibold">inteligência artificial</span>. A
-                plataforma entende seus objetivos, nível, orçamento e preferência por aulas
-                presenciais ou online e entrega um ranking dos profissionais mais compatíveis.
+                A FitMatch usa{' '}
+                <span className="fitmatch-text-ai font-semibold">inteligência artificial</span> para
+                sugerir educadores físicos alinhados ao seu objetivo, nível, orçamento e à modalidade
+                que você prefere — presencial, online ou híbrida — com um ranking explicado em
+                português.
               </p>
             </div>
 
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
-              <Link href="/matches" className={buttonVariants({ variant: 'primary' })}>
-                Ver meus matches
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/matches" className={buttonVariants({ variant: 'primary' })}>
+                  Ver meus matches
+                </Link>
+              ) : (
+                <>
+                  <Link href={loginToMatchesHref} className={buttonVariants({ variant: 'primary' })}>
+                    Entrar e ver professores
+                  </Link>
+                  <Link href="/matches" className={buttonVariants({ variant: 'secondary' })}>
+                    Ir para matches
+                  </Link>
+                </>
+              )}
               <a
                 href="https://github.com/"
-                className={buttonVariants({ variant: 'secondary' })}
+                className={buttonVariants({ variant: 'ghost' })}
               >
                 Sobre o projeto
               </a>
