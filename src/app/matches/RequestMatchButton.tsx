@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { buttonVariants } from '../../components/ui/button-variants';
+import { Sparkles } from 'lucide-react';
 
 interface Props {
   userId?: string;
@@ -42,20 +42,19 @@ export function RequestMatchButton({ userId, studentId }: Props) {
   const disabled = loading || pending;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col items-start gap-2 sm:items-end">
       <button
         type="button"
         onClick={requestMatch}
         disabled={disabled}
-        className={buttonVariants({
-          variant: 'primary',
-          size: 'compact',
-          className: 'w-fit disabled:cursor-not-allowed',
-        })}
+        className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {disabled ? 'Buscando match com IA...' : 'Pedir novo match'}
+        <Sparkles className="size-4" aria-hidden />
+        {disabled ? 'Gerando matches…' : 'Gerar matches com IA'}
       </button>
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-600">{error}</p>
+      )}
     </div>
   );
 }
