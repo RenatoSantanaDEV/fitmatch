@@ -1,11 +1,11 @@
-import type { Session as PrismaSession } from '@prisma/client';
+import type { TrainingSession as PrismaTrainingSession } from '@prisma/client';
 import { Session } from '../../../domain/entities/Session';
 import { type Location } from '../../../domain/value-objects/Location';
 import { SessionStatus } from '../../../domain/enums/SessionStatus';
 import { SessionModality } from '../../../domain/enums/SessionModality';
 
 export class SessionMapper {
-  static toDomain(raw: PrismaSession): Session {
+  static toDomain(raw: PrismaTrainingSession): Session {
     const location: Location | undefined =
       raw.locationCity
         ? {

@@ -9,6 +9,7 @@ import { PrismaReviewRepository } from '../infrastructure/db/repositories/Prisma
 import { MatchingAdapterFactory } from '../infrastructure/ai/MatchingAdapterFactory';
 import { NoopNotificationAdapter } from '../infrastructure/notifications/NoopNotificationAdapter';
 import { RegisterUserUseCase } from '../application/use-cases/user/RegisterUserUseCase';
+import { RegisterStudentAccountUseCase } from '../application/use-cases/user/RegisterStudentAccountUseCase';
 import { RequestMatchUseCase } from '../application/use-cases/match/RequestMatchUseCase';
 import { ListMatchesUseCase } from '../application/use-cases/match/ListMatchesUseCase';
 import { AcceptMatchUseCase } from '../application/use-cases/match/AcceptMatchUseCase';
@@ -31,6 +32,8 @@ const matchingAdapter = MatchingAdapterFactory.create();
 const notificationAdapter = new NoopNotificationAdapter();
 
 export const registerUserUseCase = new RegisterUserUseCase(userRepo);
+
+export const registerStudentAccountUseCase = new RegisterStudentAccountUseCase(prisma);
 
 export const requestMatchUseCase = new RequestMatchUseCase(
   matchRepo,

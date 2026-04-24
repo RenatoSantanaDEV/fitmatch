@@ -18,7 +18,7 @@ export class PrismaUserRepository implements IUserRepository {
     return raw ? UserMapper.toDomain(raw) : null;
   }
 
-  async findByEmailForAuth(email: string): Promise<{ user: User; passwordHash: string } | null> {
+  async findByEmailForAuth(email: string): Promise<{ user: User; passwordHash: string | null } | null> {
     const raw = await this.prisma.user.findUnique({ where: { email } });
     if (!raw) return null;
     return { user: UserMapper.toDomain(raw), passwordHash: raw.passwordHash };

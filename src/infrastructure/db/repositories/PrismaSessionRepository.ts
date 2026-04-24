@@ -8,22 +8,25 @@ export class PrismaSessionRepository implements ISessionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Session | null> {
-    const raw = await this.prisma.session.findUnique({ where: { id } });
+    const raw = await this.prisma.trainingSession.findUnique({ where: { id } });
     return raw ? SessionMapper.toDomain(raw) : null;
   }
 
   async findByStudentId(studentId: string): Promise<Session[]> {
-    const rows = await this.prisma.session.findMany({ where: { studentId }, orderBy: { startTime: 'asc' } });
+    const rows = await this.prisma.trainingSession.findMany({ where: { studentId }, orderBy: { startTime: 'asc' } });
     return rows.map(SessionMapper.toDomain);
   }
 
   async findByProfessionalId(professionalId: string): Promise<Session[]> {
-    const rows = await this.prisma.session.findMany({ where: { professionalId }, orderBy: { startTime: 'asc' } });
+    const rows = await this.prisma.trainingSession.findMany({
+      where: { professionalId },
+      orderBy: { startTime: 'asc' },
+    });
     return rows.map(SessionMapper.toDomain);
   }
 
   async save(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Promise<Session> {
-    const raw = await this.prisma.session.create({
+    const raw = await this.prisma.trainingSession.create({
       data: {
         studentId: session.studentId,
         professionalId: session.professionalId,
@@ -51,7 +54,7 @@ export class PrismaSessionRepository implements ISessionRepository {
     status: SessionStatus,
     extra?: Partial<Pick<Session, 'completedAt' | 'cancellationReason' | 'cancelledBy'>>,
   ): Promise<Session> {
-    const raw = await this.prisma.session.update({
+    const raw = await this.prisma.trainingSession.update({
       where: { id },
       data: {
         status,

@@ -7,6 +7,7 @@ const { auth } = NextAuth(authConfig);
 const PUBLIC_PATHS = new Set([
   '/',
   '/login',
+  '/register',
   '/api/auth',
   '/api/users',
   '/api/professionals',
@@ -15,6 +16,7 @@ const PUBLIC_PATHS = new Set([
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (pathname.startsWith('/api/auth/')) return true;
+  if (pathname.startsWith('/api/register/')) return true;
   return false;
 }
 

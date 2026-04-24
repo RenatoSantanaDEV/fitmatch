@@ -19,18 +19,14 @@ function safeCallbackUrl(raw: string | null): string {
 const inputClass =
   'rounded-lg border border-border-subtle bg-background px-3 py-2.5 text-foreground outline-none ring-brand/30 transition focus:ring-2';
 
-export function LoginForm({
-  showSeedHint,
-  oauth,
-}: {
-  showSeedHint: boolean;
-  oauth: OauthProviderFlags;
-}) {
+export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,13 +38,37 @@ export function LoginForm({
     setError(null);
     setLoading(true);
     try {
-      const res = await signIn('credentials', {
+      const res = await fetch('/api/register/student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          phone: phone.trim() || undefined,
+        }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg =
+          typeof body.error === 'string'
+            ? body.error
+            : Array.isArray(body.error)
+              ? body.error.map((i: { message?: string }) => i.message).join(', ')
+              : 'Não foi possível criar a conta.';
+        setError(msg);
+        return;
+      }
+
+      const sign = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
-      if (res?.error || res?.ok === false) {
-        setError('Email ou senha incorretos.');
+      if (sign?.error || sign?.ok === false) {
+        router.push(`/login?${new URLSearchParams({ callbackUrl }).toString()}`);
         return;
       }
       router.push(callbackUrl);
@@ -60,9 +80,9 @@ export function LoginForm({
 
   return (
     <AuthCard>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Entrar</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Criar conta</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        Acesse como aluno para ver professores compatíveis e pedir matches com IA.
+        Cadastro de aluno. Depois você poderá completar seu perfil para matches ainda melhores.
       </p>
 
       {hasOAuth && (
@@ -76,6 +96,19 @@ export function LoginForm({
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-foreground">Nome completo</span>
+          <input
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            minLength={2}
+            value={name}
+            onChange={(ev) => setName(ev.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-foreground">E-mail</span>
           <input
             name="email"
@@ -88,16 +121,29 @@ export function LoginForm({
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-foreground">Telefone (opcional)</span>
+          <input
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(ev) => setPhone(ev.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-foreground">Senha</span>
           <input
             name="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
+            minLength={8}
             value={password}
             onChange={(ev) => setPassword(ev.target.value)}
             className={inputClass}
           />
+          <span className="text-xs text-muted-foreground">Mínimo de 8 caracteres.</span>
         </label>
 
         {error && (
@@ -114,24 +160,17 @@ export function LoginForm({
             className: 'mt-1 w-full justify-center disabled:cursor-not-allowed',
           })}
         >
-          {loading ? 'Entrando…' : 'Entrar com e-mail'}
+          {loading ? 'Criando conta…' : 'Cadastrar com e-mail'}
         </button>
       </form>
 
-      {showSeedHint && (
-        <p className="mt-4 rounded-lg border border-dashed border-border-subtle bg-brand-soft/40 px-3 py-2 text-xs text-muted-foreground">
-          Ambiente local: aluno de teste <span className="font-mono text-foreground">aluno@fitmatch.dev</span> — senha
-          em <span className="font-mono">prisma/seed.ts</span>.
-        </p>
-      )}
-
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        Não tem conta?{' '}
+        Já tem conta?{' '}
         <Link
-          href={`/register?${new URLSearchParams({ callbackUrl }).toString()}`}
+          href={`/login?${new URLSearchParams({ callbackUrl }).toString()}`}
           className="font-semibold text-brand hover:underline"
         >
-          Criar conta de aluno
+          Entrar
         </Link>
       </p>
 

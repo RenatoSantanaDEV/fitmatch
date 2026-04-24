@@ -8,6 +8,10 @@ const loginWithMatchesCallback = `/login?${new URLSearchParams({
   callbackUrl: '/matches',
 }).toString()}`;
 
+const registerWithMatchesCallback = `/register?${new URLSearchParams({
+  callbackUrl: '/matches',
+}).toString()}`;
+
 export function SiteHeader() {
   const { status } = useSession();
 
@@ -35,9 +39,20 @@ export function SiteHeader() {
               </button>
             </>
           ) : status === 'unauthenticated' ? (
-            <Link href={loginWithMatchesCallback} className={buttonVariants({ variant: 'primary', size: 'compact' })}>
-              Entrar
-            </Link>
+            <>
+              <Link
+                href={registerWithMatchesCallback}
+                className={buttonVariants({ variant: 'secondary', size: 'compact' })}
+              >
+                Cadastrar
+              </Link>
+              <Link
+                href={loginWithMatchesCallback}
+                className={buttonVariants({ variant: 'primary', size: 'compact' })}
+              >
+                Entrar
+              </Link>
+            </>
           ) : null}
         </nav>
       </div>

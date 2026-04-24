@@ -11,7 +11,7 @@ export class UserMapper {
       email: makeEmail(raw.email),
       name: raw.name,
       phone: raw.phone ? makePhoneNumber(raw.phone) : undefined,
-      avatarUrl: raw.avatarUrl ?? undefined,
+      avatarUrl: raw.avatarUrl ?? raw.image ?? undefined,
       role: raw.role as UserRole,
       isActive: raw.isActive,
       createdAt: raw.createdAt,
