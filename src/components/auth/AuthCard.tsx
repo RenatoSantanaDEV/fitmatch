@@ -11,7 +11,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        'w-full max-w-md rounded-2xl border border-border-subtle bg-surface/90 p-8 shadow-lg backdrop-blur-md dark:bg-surface-elevated/95',
+        'w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg',
         className,
       )}
     >

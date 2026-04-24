@@ -5,7 +5,7 @@ import type { OauthProviderFlags } from '../../lib/oauthConfig';
 import { cn } from '../../lib/cn';
 
 const oauthButtonClass =
-  'flex w-full items-center justify-center gap-2 rounded-full border border-border-subtle bg-surface px-4 py-3 text-sm font-medium text-foreground transition hover:border-brand/40 hover:bg-surface-elevated dark:bg-background/40';
+  'flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:bg-slate-50';
 
 export function OAuthButtons({
   oauth,
