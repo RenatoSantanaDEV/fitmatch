@@ -25,7 +25,7 @@ const prisma = getPrismaClient();
 
 const userRepo = new PrismaUserRepository(prisma);
 export const studentRepo = new PrismaStudentRepository(prisma);
-const professionalRepo = new PrismaProfessionalRepository(prisma);
+export const professionalRepo = new PrismaProfessionalRepository(prisma);
 const availabilityRepo = new PrismaAvailabilityRepository(prisma);
 const matchRepo = new PrismaMatchRepository(prisma);
 const sessionRepo = new PrismaSessionRepository(prisma);
