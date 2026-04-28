@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Star, MapPin, CheckCircle, ArrowRight, Zap, Shield, MessageSquare } from 'lucide-react';
 import { OpenAuthModal } from '../auth/OpenAuthModal';
+import { FindTeacherSearchPanel } from './FindTeacherSearchPanel';
 import { HeroVisual } from './HeroVisual';
 
 const mockProfessionals = [
@@ -58,7 +59,7 @@ const howItWorks = [
     icon: <Zap className="size-6" aria-hidden />,
     step: '02',
     title: 'IA gera o ranking',
-    desc: 'Nossa IA analisa professores e cria um match explicado em português.',
+    desc: 'Nossa IA analisa professores e monta um ranking explicado em português.',
   },
   {
     icon: <MessageSquare className="size-6" aria-hidden />,
@@ -72,61 +73,48 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <main className="flex flex-1 flex-col bg-white">
 
-      {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="bg-blue-600">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:py-20">
 
-          {/* Left */}
           <div className="flex flex-1 flex-col gap-7">
-            {/* Badge */}
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-blue-500/60 px-4 py-1.5 text-sm font-semibold text-blue-100 backdrop-blur-sm">
               <span className="flex h-2 w-2 rounded-full bg-blue-200" />
-              Matching com Inteligência Artificial
+              Indicações com inteligência artificial
             </div>
 
-            {/* Title */}
             <h1 className="text-5xl font-black leading-[1.05] tracking-tight text-white sm:text-6xl">
               Encontre o professor{' '}
               <span className="text-blue-200">certo para você</span>
             </h1>
 
-            {/* Subtitle */}
             <p className="max-w-md text-lg leading-relaxed text-blue-100">
               A FitMatch usa inteligência artificial para conectar alunos a educadores físicos
               compatíveis — com ranking explicado em português.
             </p>
 
-            {/* CTAs */}
             <div className="flex flex-wrap gap-3">
               {isAuthenticated ? (
-                <Link
-                  href="/matches"
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-blue-600 shadow-lg transition hover:bg-blue-50 active:scale-[0.98]"
-                >
-                  Ver meus matches
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
+                <FindTeacherSearchPanel />
               ) : (
                 <>
                   <OpenAuthModal
                     mode="login"
-                    callbackUrl="/matches"
+                    callbackUrl="/recomendacoes"
                     className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-blue-600 shadow-lg transition hover:bg-blue-50 active:scale-[0.98]"
                   >
                     Começar grátis
                     <ArrowRight className="size-4" aria-hidden />
                   </OpenAuthModal>
                   <Link
-                    href="/matches"
+                    href="/recomendacoes"
                     className="inline-flex items-center gap-2 rounded-full border border-blue-400 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-500"
                   >
-                    Ver demo
+                    Ver recomendações
                   </Link>
                 </>
               )}
             </div>
 
-            {/* Stats */}
             <div className="flex flex-wrap gap-8 border-t border-blue-500 pt-6">
               {[
                 { value: '6+', label: 'Professores verificados' },
@@ -141,14 +129,13 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
           </div>
 
-          {/* Right — match preview */}
           <div className="w-full lg:max-w-[360px]">
             <HeroVisual />
           </div>
         </div>
       </section>
 
-      {/* ── ROLE CARDS ───────────────────────────────────────────────── */}
+      {!isAuthenticated ? (
       <section className="border-b border-slate-100 bg-slate-50 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="mb-2 text-center text-3xl font-black tracking-tight text-slate-900">
@@ -162,7 +149,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             <OpenAuthModal
               mode="login"
               role="student"
-              callbackUrl="/matches"
+              callbackUrl="/recomendacoes"
               className="group relative flex w-full flex-col gap-5 overflow-hidden rounded-2xl border-2 border-blue-100 bg-white p-8 text-left shadow-sm transition hover:border-blue-400 hover:shadow-lg"
             >
               <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-blue-50 transition group-hover:bg-blue-100" />
@@ -174,7 +161,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </div>
                 <h3 className="text-xl font-black text-slate-900">Sou Aluno</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  Receba matches personalizados com professores alinhados ao seu objetivo,
+                  Receba uma lista personalizada de professores alinhados ao seu objetivo,
                   orçamento e modalidade preferida.
                 </p>
                 <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 transition-all group-hover:gap-3">
@@ -186,7 +173,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             <OpenAuthModal
               mode="login"
               role="professional"
-              callbackUrl="/matches"
+              callbackUrl="/recomendacoes"
               className="group relative flex w-full flex-col gap-5 overflow-hidden rounded-2xl border-2 border-violet-100 bg-white p-8 text-left shadow-sm transition hover:border-violet-400 hover:shadow-lg"
             >
               <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-violet-50 transition group-hover:bg-violet-100" />
@@ -210,8 +197,8 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
           </div>
         </div>
       </section>
+      ) : null}
 
-      {/* ── PROFESSIONALS ────────────────────────────────────────────── */}
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-10 flex items-end justify-between">
@@ -223,13 +210,22 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 Professores disponíveis
               </h2>
             </div>
-            <OpenAuthModal
-              mode="login"
-              callbackUrl="/matches"
-              className="hidden items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline sm:inline-flex"
-            >
-              Ver todos <ArrowRight className="size-3.5" aria-hidden />
-            </OpenAuthModal>
+            {isAuthenticated ? (
+              <Link
+                href="/descobrir"
+                className="hidden items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline sm:inline-flex"
+              >
+                Buscar professores <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            ) : (
+              <OpenAuthModal
+                mode="login"
+                callbackUrl="/recomendacoes"
+                className="hidden items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline sm:inline-flex"
+              >
+                Ver todos <ArrowRight className="size-3.5" aria-hidden />
+              </OpenAuthModal>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -238,7 +234,6 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 key={pro.name}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg"
               >
-                {/* Colored top strip */}
                 <div className={`bg-gradient-to-r ${pro.color} flex items-center gap-4 px-6 py-5`}>
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-lg font-black text-white backdrop-blur-sm">
                     {pro.initials}
@@ -254,7 +249,6 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   </div>
                 </div>
 
-                {/* Body */}
                 <div className="flex flex-1 flex-col gap-4 p-5">
                   <div className="flex flex-wrap gap-1.5">
                     {pro.specialties.map((s) => (
@@ -292,7 +286,6 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
       <section className="bg-slate-900 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-14 text-center">
@@ -327,25 +320,66 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
         </div>
       </section>
 
-      {/* ── CTA FINAL ────────────────────────────────────────────────── */}
+      <section id="ajuda-fitmatch" className="border-b border-slate-100 bg-white py-14 sm:py-16">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            Precisa de ajuda para começar?
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+            Use <strong className="text-slate-800">Procurar</strong> para filtrar por cidade e
+            especialidade. Em <strong className="text-slate-800">Recomendações</strong>, a IA monta
+            uma lista ordenada por afinidade com o seu perfil — sempre com texto claro em
+            português.
+          </p>
+        </div>
+      </section>
+
       <section className="bg-blue-600 py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Pronto para encontrar seu professor?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-blue-200">
-            Crie sua conta gratuitamente e receba matches personalizados em minutos.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <OpenAuthModal
-              mode="register"
-              callbackUrl="/matches"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-blue-600 shadow-xl shadow-blue-800/30 transition hover:bg-blue-50 active:scale-[0.98]"
-            >
-              Criar conta grátis
-              <ArrowRight className="size-4" aria-hidden />
-            </OpenAuthModal>
-          </div>
+          {isAuthenticated ? (
+            <>
+              <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                Continue a explorar professores
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-blue-200">
+                Ajuste preferências na sua conta e veja o ranking gerado para você.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/descobrir"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-blue-600 shadow-xl shadow-blue-800/30 transition hover:bg-blue-50 active:scale-[0.98]"
+                >
+                  Encontrar professor
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+                <Link
+                  href="/perfil"
+                  className="inline-flex items-center gap-2 rounded-full border border-blue-300 px-8 py-4 text-sm font-semibold text-white transition hover:bg-blue-500"
+                >
+                  Conta e perfil
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                Pronto para encontrar seu professor?
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-blue-200">
+                Crie sua conta gratuitamente e receba recomendações personalizadas em minutos.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <OpenAuthModal
+                  mode="register"
+                  callbackUrl="/recomendacoes"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-blue-600 shadow-xl shadow-blue-800/30 transition hover:bg-blue-50 active:scale-[0.98]"
+                >
+                  Criar conta grátis
+                  <ArrowRight className="size-4" aria-hidden />
+                </OpenAuthModal>
+              </div>
+            </>
+          )}
         </div>
       </section>
 

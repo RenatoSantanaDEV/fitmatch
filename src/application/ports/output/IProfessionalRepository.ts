@@ -4,12 +4,16 @@ import { SessionModality } from '../../../domain/enums/SessionModality';
 
 export interface ProfessionalFilters {
   city?: string;
+  cityInsensitive?: boolean;
   state?: string;
   specializations?: SpecializationType[];
   modalities?: SessionModality[];
   isVerified?: boolean;
   isAcceptingClients?: boolean;
   maxPriceInCents?: number;
+  nearLat?: number;
+  nearLng?: number;
+  radiusKm?: number;
   page?: number;
   limit?: number;
 }

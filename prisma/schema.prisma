@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
 }
 
 datasource db {
@@ -149,6 +149,7 @@ model Student {
   sessions TrainingSession[]
   reviews  Review[]
   matches  Match[]
+  favoriteProfessionals StudentFavorite[]
 
   @@map("students")
 }
@@ -185,6 +186,7 @@ model Professional {
   sessions              TrainingSession[]
   reviews               Review[]
   matches               Match[]
+  favoritedByStudents   StudentFavorite[]
 
   @@index([locationCity, locationState])
   @@index([isAcceptingClients, averageRating])
@@ -237,6 +239,19 @@ model Availability {
   @@index([professionalId, isBooked])
   @@index([professionalId, startTime, endTime])
   @@map("availabilities")
+}
+
+model StudentFavorite {
+  id               String       @id @default(cuid())
+  studentId        String
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  professionalId   String
+  professional     Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+
+  @@unique([studentId, professionalId])
+  @@index([studentId])
+  @@map("student_favorites")
 }
 
 model Match {

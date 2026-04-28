@@ -6,7 +6,7 @@ import type { AuthLoginRole } from './LoginForm';
 
 export function OpenAuthModal({
   mode,
-  callbackUrl = '/matches',
+  callbackUrl = '/recomendacoes',
   role = 'student',
   className,
   children,

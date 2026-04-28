@@ -1,4 +1,4 @@
-const mockMatches = [
+const mockRecommendations = [
   {
     name: 'Ana Martins',
     role: 'Personal Trainer · Híbrido',
@@ -62,7 +62,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export function HeroVisual({ compact = false }: { compact?: boolean }) {
-  const visible = compact ? mockMatches.slice(0, 2) : mockMatches;
+  const visible = compact ? mockRecommendations.slice(0, 2) : mockRecommendations;
 
   return (
     <div className="w-full overflow-hidden rounded-2xl bg-white shadow-2xl shadow-blue-900/20">
@@ -70,12 +70,12 @@ export function HeroVisual({ compact = false }: { compact?: boolean }) {
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600">
-            Matches para você
+            Recomendações para você
           </p>
           <p className="mt-0.5 text-xs text-slate-400">Gerado por IA · Agora mesmo</p>
         </div>
         <span className="rounded-full bg-blue-600 px-3 py-1 text-[11px] font-bold text-white">
-          {mockMatches.length} resultados
+          {mockRecommendations.length} resultados
         </span>
       </div>
 
@@ -113,7 +113,7 @@ export function HeroVisual({ compact = false }: { compact?: boolean }) {
       {/* Footer */}
       <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
         <p className="text-center text-[11px] text-slate-400">
-          Cada match vem com justificativa em português
+          Cada sugestão vem com explicação em português
         </p>
       </div>
     </div>

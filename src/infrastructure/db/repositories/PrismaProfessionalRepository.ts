@@ -7,6 +7,24 @@ import {
 import { Professional } from '../../../domain/entities/Professional';
 import { ProfessionalMapper } from '../mappers/ProfessionalMapper';
 
+function haversineKm(
+  lat1: number,
+  lon1: number,
+  lat2: number | null,
+  lon2: number | null,
+): number | null {
+  if (lat2 == null || lon2 == null) return null;
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export class PrismaProfessionalRepository implements IProfessionalRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -77,8 +95,11 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
     const skip = (page - 1) * limit;
 
     const where = {
-      ...(filters.city && { locationCity: filters.city }),
-      ...(filters.state && { locationState: filters.state }),
+      ...(filters.city &&
+        (filters.cityInsensitive
+          ? { locationCity: { contains: filters.city, mode: 'insensitive' as const } }
+          : { locationCity: filters.city })),
+      ...(filters.state && { locationState: { equals: filters.state, mode: 'insensitive' as const } }),
       ...(filters.isVerified !== undefined && { isVerified: filters.isVerified }),
       ...(filters.isAcceptingClients !== undefined && { isAcceptingClients: filters.isAcceptingClients }),
       ...(filters.maxPriceInCents && { priceMin: { lte: filters.maxPriceInCents } }),
@@ -89,6 +110,34 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         modalities: { hasSome: filters.modalities },
       }),
     };
+
+    const useGeo =
+      filters.nearLat != null &&
+      filters.nearLng != null &&
+      (filters.radiusKm ?? 0) > 0;
+
+    if (useGeo) {
+      const takeCap = 400;
+      const rows = await this.prisma.professional.findMany({
+        where,
+        take: takeCap,
+        orderBy: { averageRating: 'desc' },
+      });
+      const lat = filters.nearLat!;
+      const lng = filters.nearLng!;
+      const radius = filters.radiusKm!;
+      const scored = rows
+        .map((r) => {
+          const d = haversineKm(lat, lng, r.locationLat ?? null, r.locationLng ?? null);
+          return { r, d };
+        })
+        .filter((x) => x.d !== null && x.d <= radius)
+        .sort((a, b) => a.d! - b.d!);
+      const total = scored.length;
+      const slice = scored.slice(skip, skip + limit);
+      const data = slice.map((x) => ProfessionalMapper.toDomain(x.r));
+      return { data, total, page, limit };
+    }
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.professional.findMany({ where, skip, take: limit, orderBy: { averageRating: 'desc' } }),

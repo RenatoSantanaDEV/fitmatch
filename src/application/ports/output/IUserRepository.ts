@@ -2,6 +2,7 @@ import { User } from '../../../domain/entities/User';
 import { type Email } from '../../../domain/value-objects/Email';
 
 export interface IUserRepository {
+  findNamesByIds(ids: readonly string[]): Promise<Map<string, string>>;
   findById(id: string): Promise<User | null>;
   findByEmail(email: Email): Promise<User | null>;
   findByEmailForAuth(email: string): Promise<{ user: User; passwordHash: string | null } | null>;

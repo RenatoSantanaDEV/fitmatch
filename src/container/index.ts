@@ -18,16 +18,19 @@ import { CancelSessionUseCase } from '../application/use-cases/session/CancelSes
 import { CompleteSessionUseCase } from '../application/use-cases/session/CompleteSessionUseCase';
 import { SubmitReviewUseCase } from '../application/use-cases/review/SubmitReviewUseCase';
 import { ListProfessionalsUseCase } from '../application/use-cases/professional/ListProfessionalsUseCase';
+import { SearchProfessionalsWithAiUseCase } from '../application/use-cases/professional/SearchProfessionalsWithAiUseCase';
+import { PrismaStudentFavoriteRepository } from '../infrastructure/db/repositories/PrismaStudentFavoriteRepository';
 
 const prisma = getPrismaClient();
 
 const userRepo = new PrismaUserRepository(prisma);
-const studentRepo = new PrismaStudentRepository(prisma);
+export const studentRepo = new PrismaStudentRepository(prisma);
 const professionalRepo = new PrismaProfessionalRepository(prisma);
 const availabilityRepo = new PrismaAvailabilityRepository(prisma);
 const matchRepo = new PrismaMatchRepository(prisma);
 const sessionRepo = new PrismaSessionRepository(prisma);
 const reviewRepo = new PrismaReviewRepository(prisma);
+export const studentFavoriteRepo = new PrismaStudentFavoriteRepository(prisma);
 const matchingAdapter = MatchingAdapterFactory.create();
 const notificationAdapter = new NoopNotificationAdapter();
 
@@ -66,4 +69,8 @@ export const completeSessionUseCase = new CompleteSessionUseCase(sessionRepo);
 
 export const submitReviewUseCase = new SubmitReviewUseCase(reviewRepo, sessionRepo, professionalRepo);
 
-export const listProfessionalsUseCase = new ListProfessionalsUseCase(professionalRepo);
+export const listProfessionalsUseCase = new ListProfessionalsUseCase(professionalRepo, userRepo);
+
+export const searchProfessionalsWithAiUseCase = new SearchProfessionalsWithAiUseCase(
+  listProfessionalsUseCase,
+);

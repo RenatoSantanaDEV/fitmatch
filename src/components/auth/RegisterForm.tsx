@@ -43,16 +43,25 @@ export function RegisterForm({
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch('/api/register/student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          phone: phone.trim() || undefined,
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch('/api/student-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            phone: phone.trim() || undefined,
+          }),
+        });
+      } catch {
+        setError(
+          'Não foi possível contactar o servidor. Confirme que está online, tente outra rede ou desative bloqueadores para este site.',
+        );
+        return;
+      }
 
       const body = await res.json().catch(() => ({}));
 
@@ -67,11 +76,18 @@ export function RegisterForm({
         return;
       }
 
-      const sign = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+      let sign: Awaited<ReturnType<typeof signIn>>;
+      try {
+        sign = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+      } catch {
+        setError('Conta criada, mas a sessão não iniciou. Use «Entrar» com o mesmo e-mail e senha.');
+        onSwitchToLogin?.();
+        return;
+      }
       if (sign?.error || sign?.ok === false) {
         onSwitchToLogin?.();
         return;
@@ -93,7 +109,7 @@ export function RegisterForm({
         Criar conta
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-slate-500">
-        Cadastro de aluno. Depois você poderá completar seu perfil para matches ainda melhores.
+        Cadastro de aluno. Depois você poderá completar seu perfil para recomendações ainda melhores.
       </p>
 
       {hasOAuth && (

@@ -25,6 +25,7 @@ export interface UpdateProfessionalDTO {
 export interface ProfessionalResponseDTO {
   id: string;
   userId: string;
+  displayName: string;
   bio: string;
   specializations: SpecializationType[];
   location: Location;
@@ -41,9 +42,13 @@ export interface ProfessionalResponseDTO {
 export interface ListProfessionalsDTO {
   city?: string;
   state?: string;
+  cityInsensitive?: boolean;
   specializations?: SpecializationType[];
   modalities?: SessionModality[];
   maxPriceInCents?: number;
+  nearLat?: number;
+  nearLng?: number;
+  radiusKm?: number;
   page?: number;
   limit?: number;
 }

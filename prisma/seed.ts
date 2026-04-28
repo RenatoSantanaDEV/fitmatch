@@ -157,7 +157,7 @@ async function main() {
   console.log(`Student ID:   ${student.id}`);
   console.log(`Student User: ${studentUser.id}  (${studentUser.email})`);
   console.log(
-    `Navegue para /matches?studentId=${student.id} para testar o ranking da IA.`,
+    `Navegue para /recomendacoes?studentId=${student.id} para testar o ranking da IA.`,
   );
 }
 

@@ -42,7 +42,7 @@ export function AuthModalProvider({
 }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [callbackUrl, setCallbackUrl] = useState('/matches');
+  const [callbackUrl, setCallbackUrl] = useState('/recomendacoes');
   const [loginRole, setLoginRole] = useState<AuthLoginRole>('student');
 
   const close = useCallback(() => setOpen(false), []);
@@ -140,9 +140,9 @@ export function AuthModalProvider({
 }
 
 function safeRelativeCallback(raw: string | null | undefined): string {
-  if (!raw) return '/matches';
+  if (!raw) return '/recomendacoes';
   if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
-  return '/matches';
+  return '/recomendacoes';
 }
 
 export function AuthUrlSync() {

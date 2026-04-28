@@ -90,7 +90,7 @@ export function LoginForm({
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {role === 'student'
-            ? 'Acesse e receba matches com educadores físicos compatíveis.'
+            ? 'Acesse e veja recomendações de educadores físicos compatíveis com o seu perfil.'
             : 'Acesse seu perfil profissional e gerencie seus alunos.'}
         </p>
       </div>
