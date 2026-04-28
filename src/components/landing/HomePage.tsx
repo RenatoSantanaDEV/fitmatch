@@ -1,8 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Star, MapPin, CheckCircle, ArrowRight, Zap, Shield, MessageSquare } from 'lucide-react';
+import { OpenAuthModal } from '../auth/OpenAuthModal';
 import { HeroVisual } from './HeroVisual';
-
-const loginHref = `/login?${new URLSearchParams({ callbackUrl: '/matches' }).toString()}`;
 
 const mockProfessionals = [
   {
@@ -107,13 +108,14 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </Link>
               ) : (
                 <>
-                  <Link
-                    href={loginHref}
+                  <OpenAuthModal
+                    mode="login"
+                    callbackUrl="/matches"
                     className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-blue-600 shadow-lg transition hover:bg-blue-50 active:scale-[0.98]"
                   >
                     Começar grátis
                     <ArrowRight className="size-4" aria-hidden />
-                  </Link>
+                  </OpenAuthModal>
                   <Link
                     href="/matches"
                     className="inline-flex items-center gap-2 rounded-full border border-blue-400 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-500"
@@ -157,9 +159,11 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
           </p>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Link
-              href={`/login?${new URLSearchParams({ callbackUrl: '/matches', role: 'student' }).toString()}`}
-              className="group relative flex flex-col gap-5 overflow-hidden rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition hover:border-blue-400 hover:shadow-lg"
+            <OpenAuthModal
+              mode="login"
+              role="student"
+              callbackUrl="/matches"
+              className="group relative flex w-full flex-col gap-5 overflow-hidden rounded-2xl border-2 border-blue-100 bg-white p-8 text-left shadow-sm transition hover:border-blue-400 hover:shadow-lg"
             >
               <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-blue-50 transition group-hover:bg-blue-100" />
               <div className="relative">
@@ -177,11 +181,13 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   Entrar como aluno <ArrowRight className="size-4" aria-hidden />
                 </span>
               </div>
-            </Link>
+            </OpenAuthModal>
 
-            <Link
-              href={`/login?${new URLSearchParams({ callbackUrl: '/matches', role: 'professional' }).toString()}`}
-              className="group relative flex flex-col gap-5 overflow-hidden rounded-2xl border-2 border-violet-100 bg-white p-8 shadow-sm transition hover:border-violet-400 hover:shadow-lg"
+            <OpenAuthModal
+              mode="login"
+              role="professional"
+              callbackUrl="/matches"
+              className="group relative flex w-full flex-col gap-5 overflow-hidden rounded-2xl border-2 border-violet-100 bg-white p-8 text-left shadow-sm transition hover:border-violet-400 hover:shadow-lg"
             >
               <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-violet-50 transition group-hover:bg-violet-100" />
               <div className="relative">
@@ -200,7 +206,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   Entrar como professor <ArrowRight className="size-4" aria-hidden />
                 </span>
               </div>
-            </Link>
+            </OpenAuthModal>
           </div>
         </div>
       </section>
@@ -217,12 +223,13 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 Professores disponíveis
               </h2>
             </div>
-            <Link
-              href={loginHref}
+            <OpenAuthModal
+              mode="login"
+              callbackUrl="/matches"
               className="hidden items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline sm:inline-flex"
             >
               Ver todos <ArrowRight className="size-3.5" aria-hidden />
-            </Link>
+            </OpenAuthModal>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -330,13 +337,14 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             Crie sua conta gratuitamente e receba matches personalizados em minutos.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href={loginHref}
+            <OpenAuthModal
+              mode="register"
+              callbackUrl="/matches"
               className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-blue-600 shadow-xl shadow-blue-800/30 transition hover:bg-blue-50 active:scale-[0.98]"
             >
               Criar conta grátis
               <ArrowRight className="size-4" aria-hidden />
-            </Link>
+            </OpenAuthModal>
           </div>
         </div>
       </section>

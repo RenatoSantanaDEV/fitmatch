@@ -2,28 +2,33 @@
 
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { AuthCard } from '../../components/auth/AuthCard';
-import { AuthDivider } from '../../components/auth/AuthDivider';
-import { OAuthButtons } from '../../components/auth/OAuthButtons';
-import { buttonVariants } from '../../components/ui/button-variants';
+import { AuthCard } from './AuthCard';
+import { AuthDivider } from './AuthDivider';
+import { OAuthButtons } from './OAuthButtons';
+import { buttonVariants } from '../ui/button-variants';
 import type { OauthProviderFlags } from '../../lib/oauthConfig';
-
-function safeCallbackUrl(raw: string | null): string {
-  if (!raw) return '/matches';
-  if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
-  return '/matches';
-}
 
 const inputClass =
   'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100';
 
-export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
+export function RegisterForm({
+  oauth,
+  callbackUrl,
+  onSwitchToLogin,
+  onSuccess,
+  onClose,
+  variant = 'page',
+}: {
+  oauth: OauthProviderFlags;
+  callbackUrl: string;
+  onSwitchToLogin?: () => void;
+  onSuccess?: () => void;
+  onClose?: () => void;
+  variant?: 'page' | 'modal';
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -68,9 +73,10 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
         redirect: false,
       });
       if (sign?.error || sign?.ok === false) {
-        router.push(`/login?${new URLSearchParams({ callbackUrl }).toString()}`);
+        onSwitchToLogin?.();
         return;
       }
+      onSuccess?.();
       router.push(callbackUrl);
       router.refresh();
     } finally {
@@ -78,10 +84,15 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
     }
   }
 
-  return (
-    <AuthCard>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Criar conta</h1>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+  const body = (
+    <>
+      <h1
+        id={variant === 'modal' ? 'auth-modal-title' : undefined}
+        className="text-2xl font-semibold tracking-tight text-slate-900"
+      >
+        Criar conta
+      </h1>
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
         Cadastro de aluno. Depois você poderá completar seu perfil para matches ainda melhores.
       </p>
 
@@ -94,9 +105,9 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
         </>
       )}
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-foreground">Nome completo</span>
+          <span className="font-medium text-slate-800">Nome completo</span>
           <input
             name="name"
             type="text"
@@ -109,7 +120,7 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-foreground">E-mail</span>
+          <span className="font-medium text-slate-800">E-mail</span>
           <input
             name="email"
             type="email"
@@ -121,7 +132,7 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-foreground">Telefone (opcional)</span>
+          <span className="font-medium text-slate-800">Telefone (opcional)</span>
           <input
             name="phone"
             type="tel"
@@ -132,7 +143,7 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-foreground">Senha</span>
+          <span className="font-medium text-slate-800">Senha</span>
           <input
             name="password"
             type="password"
@@ -143,7 +154,7 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
             onChange={(ev) => setPassword(ev.target.value)}
             className={inputClass}
           />
-          <span className="text-xs text-muted-foreground">Mínimo de 8 caracteres.</span>
+          <span className="text-xs text-slate-500">Mínimo de 8 caracteres.</span>
         </label>
 
         {error && (
@@ -164,21 +175,44 @@ export function RegisterForm({ oauth }: { oauth: OauthProviderFlags }) {
         </button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        Já tem conta?{' '}
-        <Link
-          href={`/login?${new URLSearchParams({ callbackUrl }).toString()}`}
-          className="font-semibold text-brand hover:underline"
-        >
-          Entrar
-        </Link>
-      </p>
+      {onSwitchToLogin ? (
+        <p className="mt-8 text-center text-sm text-slate-500">
+          Já tem conta?{' '}
+          <button
+            type="button"
+            onClick={onSwitchToLogin}
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            Entrar
+          </button>
+        </p>
+      ) : null}
 
-      <p className="mt-3 text-center text-sm">
-        <Link href="/" className="text-muted-foreground hover:text-foreground">
-          Voltar à página inicial
-        </Link>
-      </p>
-    </AuthCard>
+      {variant === 'modal' && onClose ? (
+        <p className="mt-3 text-center text-sm">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-800"
+          >
+            Voltar à página inicial
+          </button>
+        </p>
+      ) : variant === 'page' ? (
+        <p className="mt-3 text-center text-sm">
+          <Link href="/" className="text-slate-500 hover:text-slate-800">
+            Voltar à página inicial
+          </Link>
+        </p>
+      ) : null}
+    </>
   );
+
+  if (variant === 'modal') {
+    return (
+      <AuthCard className="max-w-none border-0 bg-transparent p-0 shadow-none">{body}</AuthCard>
+    );
+  }
+
+  return <AuthCard>{body}</AuthCard>;
 }

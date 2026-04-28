@@ -29,9 +29,12 @@ export default auth((req) => {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('callbackUrl', req.nextUrl.href);
-    return NextResponse.redirect(loginUrl);
+    const dest = `${req.nextUrl.pathname}${req.nextUrl.search}`;
+    const safeDest = dest.startsWith('/') ? dest : '/matches';
+    const home = new URL('/', req.url);
+    home.searchParams.set('auth', 'login');
+    home.searchParams.set('callbackUrl', safeDest);
+    return NextResponse.redirect(home);
   }
 
   return NextResponse.next();

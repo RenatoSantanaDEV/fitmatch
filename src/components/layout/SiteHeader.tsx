@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-
-const loginHref = `/login?${new URLSearchParams({ callbackUrl: '/matches' }).toString()}`;
-const registerHref = `/register?${new URLSearchParams({ callbackUrl: '/matches' }).toString()}`;
+import { useAuthModal } from '../auth/AuthModalContext';
 
 export function SiteHeader() {
+  const { openLogin, openRegister } = useAuthModal();
   const { status } = useSession();
 
   return (
@@ -41,18 +40,20 @@ export function SiteHeader() {
             </>
           ) : status === 'unauthenticated' ? (
             <>
-              <Link
-                href={loginHref}
+              <button
+                type="button"
+                onClick={() => openLogin({ callbackUrl: '/matches' })}
                 className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
               >
                 Entrar
-              </Link>
-              <Link
-                href={registerHref}
+              </button>
+              <button
+                type="button"
+                onClick={() => openRegister({ callbackUrl: '/matches' })}
                 className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
               >
                 Cadastrar
-              </Link>
+              </button>
             </>
           ) : null}
         </nav>

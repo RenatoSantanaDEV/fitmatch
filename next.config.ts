@@ -1,5 +1,8 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -25,6 +28,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: appRoot,
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },

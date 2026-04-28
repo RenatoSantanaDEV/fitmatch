@@ -8,8 +8,17 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'coverage/**',
+      'next-env.d.ts',
+    ],
+  },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  { ignores: ['next-env.d.ts'] },
   {
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],

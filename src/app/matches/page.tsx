@@ -14,7 +14,9 @@ interface MatchesPageProps {
 
 export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   const session = await auth();
-  if (!session?.user?.id) redirect('/login');
+  if (!session?.user?.id) {
+    redirect(`/?${new URLSearchParams({ auth: 'login', callbackUrl: '/matches' }).toString()}`);
+  }
 
   const params = await searchParams;
   const userId = session.user.id;
