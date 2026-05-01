@@ -2,22 +2,52 @@
 
 :root {
   color-scheme: light;
+
+  /* === Surfaces === */
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
   --surface-elevated: #f8fafc;
   --border-subtle: #e2e8f0;
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
+  --border-strong: #cbd5e1;
+
+  /* === Brand — Emerald (Saúde & Educação Física) === */
+  --brand: #059669;
+  --brand-hover: #047857;
   --brand-foreground: #ffffff;
-  --brand-soft: #eff6ff;
-  --brand-glow: rgba(37, 99, 235, 0.15);
+  --brand-soft: #ecfdf5;
+  --brand-soft-hover: #d1fae5;
+  --brand-glow: rgba(5, 150, 105, 0.18);
+  --brand-text: #065f46;
+
+  /* === Accent — Violet (IA & Inovação) === */
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-foreground: #ffffff;
+  --accent-soft: #ede9fe;
+  --accent-soft-hover: #ddd6fe;
+  --accent-glow: rgba(124, 58, 237, 0.15);
+  --accent-text: #4c1d95;
+
+  /* === Energy — Orange (Ação & Motivação) === */
+  --energy: #f97316;
+  --energy-hover: #ea580c;
+  --energy-foreground: #ffffff;
+  --energy-soft: #fff7ed;
+  --energy-text: #9a3412;
+
+  /* === Text / Muted === */
   --muted: #475569;
   --muted-foreground: #64748b;
+  --muted-light: #94a3b8;
+
+  /* === Semantic States === */
   --success: #059669;
   --success-soft: #ecfdf5;
   --warning: #d97706;
   --warning-soft: #fffbeb;
+  --error: #dc2626;
+  --error-soft: #fef2f2;
 }
 
 @theme inline {
@@ -26,20 +56,36 @@
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
   --color-brand-glow: var(--brand-glow);
+  --color-brand-text: var(--brand-text);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-glow: var(--accent-glow);
+  --color-accent-text: var(--accent-text);
+  --color-energy: var(--energy);
+  --color-energy-hover: var(--energy-hover);
+  --color-energy-foreground: var(--energy-foreground);
+  --color-energy-soft: var(--energy-soft);
+  --color-energy-text: var(--energy-text);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
-  --font-sans: var(--font-geist-sans);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
-  --radius-card: 1rem;
+  --radius-card: 1.25rem;
+  --radius-pill: 9999px;
 }
 
 *,
@@ -50,33 +96,156 @@
 
 html {
   color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
   background: #ffffff;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Score ring rotation */
-.score-ring {
-  transform: rotate(-90deg);
-  transform-origin: center;
+/* === Global cursor pointer for all interactive elements === */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a,
+label[for],
+select,
+[type="checkbox"],
+[type="radio"] {
+  cursor: pointer;
 }
 
-/* Gradient text utility */
-.fitmatch-text-ai {
-  background: linear-gradient(105deg, #93c5fd 0%, #bfdbfe 100%);
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* === Gradient text utilities === */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 40%, #10b981 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-@keyframes header-dropdown-in {
+.text-gradient-ai {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-energy {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Legacy compat */
+.fitmatch-text-ai {
+  background: linear-gradient(105deg, #a78bfa 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* === Score ring rotation === */
+.score-ring {
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+/* === Card lift on hover === */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+.card-lift:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.10);
+}
+
+/* ==========================================
+   ANIMATION KEYFRAMES
+   ========================================== */
+
+/* Fade up — hero content stagger */
+@keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.97);
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fade-up 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Fade in — simpler version */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fade-in 0.5s ease forwards;
+}
+
+/* Float — for the hero visual card */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-8px) rotate(0.3deg); }
+  66%       { transform: translateY(-4px) rotate(-0.3deg); }
+}
+
+.animate-float {
+  animation: float 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* Slide in from right — for hero visual */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(32px) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.animate-slide-in-right {
+  opacity: 0;
+  animation: slide-in-right 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Stagger animation delays */
+.delay-0   { animation-delay: 0ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* Header dropdown animation */
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -85,16 +254,56 @@ body {
 }
 
 .header-dropdown-panel {
-  animation: header-dropdown-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: dropdown-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Pulse glow for AI badge */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(124, 58, 237, 0);
+  }
+}
+
+.ai-badge-pulse {
+  animation: pulse-glow 2.8s ease-in-out infinite;
+}
+
+/* Shimmer for skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* Count up number emphasis */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-pop-in {
+  opacity: 0;
+  animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Icon button micro-interactions */
 .header-icon-btn {
-  transition:
-    transform 0.15s ease,
-    background-color 0.15s ease,
-    color 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
-
 .header-icon-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.91);
 }

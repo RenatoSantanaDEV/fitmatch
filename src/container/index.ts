@@ -10,6 +10,7 @@ import { MatchingAdapterFactory } from '../infrastructure/ai/MatchingAdapterFact
 import { NoopNotificationAdapter } from '../infrastructure/notifications/NoopNotificationAdapter';
 import { RegisterUserUseCase } from '../application/use-cases/user/RegisterUserUseCase';
 import { RegisterStudentAccountUseCase } from '../application/use-cases/user/RegisterStudentAccountUseCase';
+import { RegisterProfessionalAccountUseCase } from '../application/use-cases/user/RegisterProfessionalAccountUseCase';
 import { RequestMatchUseCase } from '../application/use-cases/match/RequestMatchUseCase';
 import { ListMatchesUseCase } from '../application/use-cases/match/ListMatchesUseCase';
 import { AcceptMatchUseCase } from '../application/use-cases/match/AcceptMatchUseCase';
@@ -37,6 +38,7 @@ const notificationAdapter = new NoopNotificationAdapter();
 export const registerUserUseCase = new RegisterUserUseCase(userRepo);
 
 export const registerStudentAccountUseCase = new RegisterStudentAccountUseCase(prisma);
+export const registerProfessionalAccountUseCase = new RegisterProfessionalAccountUseCase(prisma);
 
 export const requestMatchUseCase = new RequestMatchUseCase(
   matchRepo,

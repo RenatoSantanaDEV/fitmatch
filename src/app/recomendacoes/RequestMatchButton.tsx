@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 
 interface Props {
   userId?: string;
@@ -47,12 +47,20 @@ export function RequestMatchButton({ userId, studentId }: Props) {
         type="button"
         onClick={requestRanking}
         disabled={disabled}
-        className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-600/25 transition hover:bg-violet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Sparkles className="size-4" aria-hidden />
-        {disabled ? 'A gerar a sua lista…' : 'Atualizar lista com IA'}
+        {disabled ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+        ) : (
+          <Sparkles className="size-4" aria-hidden />
+        )}
+        {disabled ? 'Gerando lista com IA…' : 'Atualizar ranking com IA'}
       </button>
-      {error && <p className="max-w-xs text-right text-xs text-red-600">{error}</p>}
+      {error && (
+        <p className="max-w-xs rounded-lg bg-red-50 px-3 py-1.5 text-right text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

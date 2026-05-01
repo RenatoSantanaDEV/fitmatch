@@ -11,20 +11,22 @@ export function OpenAuthModal({
   className,
   children,
 }: {
-  mode: 'login' | 'register';
+  mode: 'login' | 'register' | 'register-professional';
   callbackUrl?: string;
   role?: AuthLoginRole;
   className?: string;
   children: ReactNode;
 }) {
-  const { openLogin, openRegister } = useAuthModal();
+  const { openLogin, openRegister, openRegisterProfessional } = useAuthModal();
   return (
     <button
       type="button"
       className={className}
-      onClick={() =>
-        mode === 'login' ? openLogin({ callbackUrl, role }) : openRegister({ callbackUrl })
-      }
+      onClick={() => {
+        if (mode === 'login') openLogin({ callbackUrl, role });
+        else if (mode === 'register-professional') openRegisterProfessional({ callbackUrl });
+        else openRegister({ callbackUrl });
+      }}
     >
       {children}
     </button>
