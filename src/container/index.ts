@@ -23,7 +23,7 @@ import { PrismaStudentFavoriteRepository } from '../infrastructure/db/repositori
 
 const prisma = getPrismaClient();
 
-const userRepo = new PrismaUserRepository(prisma);
+export const userRepo = new PrismaUserRepository(prisma);
 export const studentRepo = new PrismaStudentRepository(prisma);
 export const professionalRepo = new PrismaProfessionalRepository(prisma);
 const availabilityRepo = new PrismaAvailabilityRepository(prisma);

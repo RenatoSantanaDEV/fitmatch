@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Camera, FileText, GraduationCap, IdCard, Sparkles } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useState, type ReactNode } from 'react';
+import { Camera, Check, FileText, GraduationCap, IdCard, Loader2, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ProfileAddressSection, type ProfileInitialAddress } from './ProfileAddressSection';
 
 const inputClass =
@@ -30,6 +30,42 @@ function FieldHint({ children }: { children: ReactNode }) {
   return <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{children}</p>;
 }
 
+function readApiError(data: unknown): string {
+  if (!data || typeof data !== 'object' || !('error' in data)) return 'Erro inesperado.';
+  const err = (data as { error: unknown }).error;
+  if (typeof err === 'string') return err;
+  if (Array.isArray(err))
+    return err
+      .map((e) =>
+        typeof e === 'object' && e && 'message' in e
+          ? String((e as { message: unknown }).message)
+          : String(e),
+      )
+      .join('; ');
+  return 'Erro inesperado.';
+}
+
+function StatusBanner({
+  msg,
+}: {
+  msg: { type: 'ok' | 'err'; text: string } | null;
+}) {
+  if (!msg) return null;
+  return (
+    <div
+      role="status"
+      className={
+        msg.type === 'ok'
+          ? 'flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900'
+          : 'rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm font-medium text-red-800'
+      }
+    >
+      {msg.type === 'ok' && <Check className="size-4 shrink-0" aria-hidden />}
+      {msg.text}
+    </div>
+  );
+}
+
 function readTabFromHash(): ProfileTabId {
   if (typeof window === 'undefined') return 'conta';
   const h = window.location.hash.slice(1);
@@ -39,48 +75,65 @@ function readTabFromHash(): ProfileTabId {
 export function PerfilContent({
   initial,
   initialAddress,
-  name,
+  name: initialName,
   email,
   role,
+  phone: initialPhone,
 }: {
   initial: string;
   initialAddress: ProfileInitialAddress | null;
-  name: string | null | undefined;
-  email: string | null | undefined;
-  role: string | null | undefined;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
 }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [tab, setTab] = useState<ProfileTabId>('conta');
   const baseId = useId();
 
+  // ── Conta: dados pessoais ─────────────────────────────────────────────────
+  const [name, setName] = useState(initialName ?? '');
+  const [phone, setPhone] = useState(initialPhone ?? '');
+
+  const nameDirty = name.trim() !== (initialName ?? '').trim();
+  const phoneDirty = phone.trim() !== (initialPhone ?? '').trim();
+  const accountDirty = nameDirty || phoneDirty;
+
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountMsg, setAccountMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // ── Conta: segurança ──────────────────────────────────────────────────────
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // ── Tab sync via hash ─────────────────────────────────────────────────────
   useLayoutEffect(() => {
     setTab(readTabFromHash());
   }, []);
 
-  const roleLabel =
-    role === 'PROFESSIONAL' ? 'Professor' : role === 'STUDENT' ? 'Aluno' : role ?? '—';
-
   useEffect(() => {
-    return () => {
-      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-    };
-  }, [photoPreview]);
-
-  useEffect(() => {
-    const onHashChange = () => {
-      const next = readTabFromHash();
-      setTab(next);
-    };
+    const onHashChange = () => setTab(readTabFromHash());
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   useEffect(() => {
-    const current = window.location.hash.slice(1);
-    if (current !== tab) {
+    if (window.location.hash.slice(1) !== tab) {
       window.history.replaceState(null, '', `#${tab}`);
     }
   }, [tab]);
+
+  // ── Photo ─────────────────────────────────────────────────────────────────
+  const photoRef = useRef<string | null>(null);
+  photoRef.current = photoPreview;
+  useEffect(() => {
+    return () => {
+      if (photoRef.current?.startsWith('blob:')) URL.revokeObjectURL(photoRef.current);
+    };
+  }, []);
 
   function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -89,14 +142,80 @@ export function PerfilContent({
     setPhotoPreview(URL.createObjectURL(file));
   }
 
-  function onFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-  }
+  // ── Save: dados pessoais (diff parcial) ───────────────────────────────────
+  const onSaveAccount = useCallback(async () => {
+    if (!accountDirty) return;
 
-  const formId = `${baseId}-perfil-form`;
+    const patch: Record<string, string | null> = {};
+    if (nameDirty) patch.name = name.trim();
+    if (phoneDirty) patch.phone = phone.trim() || null;
+
+    setAccountLoading(true);
+    setAccountMsg(null);
+    try {
+      const res = await fetch('/api/profile/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (res.status === 204) {
+        setAccountMsg({ type: 'ok', text: 'Dados atualizados com sucesso.' });
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setAccountMsg({ type: 'err', text: readApiError(data) });
+    } catch {
+      setAccountMsg({ type: 'err', text: 'Não foi possível salvar os dados.' });
+    } finally {
+      setAccountLoading(false);
+    }
+  }, [accountDirty, nameDirty, phoneDirty, name, phone]);
+
+  // ── Save: senha ───────────────────────────────────────────────────────────
+  const onSavePassword = useCallback(async () => {
+    if (!currentPwd || !newPwd) {
+      setPwdMsg({ type: 'err', text: 'Preencha a senha atual e a nova senha.' });
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      setPwdMsg({ type: 'err', text: 'A confirmação não coincide com a nova senha.' });
+      return;
+    }
+    if (newPwd.length < 8) {
+      setPwdMsg({ type: 'err', text: 'A nova senha deve ter pelo menos 8 caracteres.' });
+      return;
+    }
+
+    setPwdLoading(true);
+    setPwdMsg(null);
+    try {
+      const res = await fetch('/api/profile/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd }),
+      });
+      if (res.status === 204) {
+        setCurrentPwd('');
+        setNewPwd('');
+        setConfirmPwd('');
+        setPwdMsg({ type: 'ok', text: 'Senha alterada com sucesso.' });
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setPwdMsg({ type: 'err', text: readApiError(data) });
+    } catch {
+      setPwdMsg({ type: 'err', text: 'Não foi possível alterar a senha.' });
+    } finally {
+      setPwdLoading(false);
+    }
+  }, [currentPwd, newPwd, confirmPwd]);
+
+  const roleLabel =
+    role === 'PROFESSIONAL' ? 'Professor' : role === 'STUDENT' ? 'Aluno' : role ?? '—';
 
   return (
     <div className="relative flex w-full flex-1 flex-col">
+      {/* ── Tab nav ─────────────────────────────────────────────────────── */}
       <nav
         className="sticky top-14 z-[45] w-full border-t border-white/5 bg-neutral-950 text-white shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] sm:top-[3.75rem]"
         aria-label="Secções do perfil"
@@ -120,6 +239,9 @@ export function PerfilContent({
                 }
               >
                 {item.label}
+                {item.id === 'conta' && accountDirty && (
+                  <span className="ml-1.5 inline-block size-1.5 rounded-full bg-blue-400" aria-hidden />
+                )}
               </button>
             );
           })}
@@ -128,21 +250,24 @@ export function PerfilContent({
 
       <div className="relative mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-32 sm:px-6 sm:pb-36 lg:py-10 lg:pb-40">
         <header className="mb-6 text-center sm:mb-8 sm:text-left">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Conta e perfil</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Conta e perfil
+          </h1>
           <p className="mx-auto mt-2 max-w-xl text-pretty text-slate-600 sm:mx-0">
-            Use a barra acima para mudar de secção — o mesmo alinhamento da navegação principal.
+            Use a barra acima para mudar de secção.
           </p>
         </header>
 
-        <form id={formId} onSubmit={onFormSubmit} className="space-y-6">
-          <div
-            id="perfil-panel-conta"
-            role="tabpanel"
-            aria-labelledby="perfil-tab-conta"
-            hidden={tab !== 'conta'}
-            className="space-y-8"
-          >
-            <section className={sectionCardClass}>
+        {/* ── CONTA ───────────────────────────────────────────────────────── */}
+        <div
+          id="perfil-panel-conta"
+          role="tabpanel"
+          aria-labelledby="perfil-tab-conta"
+          hidden={tab !== 'conta'}
+          className="space-y-8"
+        >
+          {/* Foto e resumo */}
+          <section className={sectionCardClass}>
             <div className="border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white px-5 py-6 sm:px-8 sm:py-7">
               <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
                 <div className="relative shrink-0">
@@ -151,7 +276,7 @@ export function PerfilContent({
                     aria-hidden={!!photoPreview}
                   >
                     {photoPreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- preview blob URL from file input
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={photoPreview} alt="" className="size-full object-cover" />
                     ) : (
                       initial
@@ -188,6 +313,7 @@ export function PerfilContent({
             </div>
           </section>
 
+          {/* Dados pessoais */}
           <section className={sectionCardClass}>
             <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
               <h2 className="text-lg font-semibold text-slate-900">Dados pessoais</h2>
@@ -196,31 +322,25 @@ export function PerfilContent({
               </p>
             </div>
             <div className="space-y-5 px-5 py-6 sm:px-8 sm:py-7">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor={`${baseId}-gender`} className={labelClass}>
-                    Gênero
-                  </label>
-                  <select id={`${baseId}-gender`} name="gender" className={inputClass} defaultValue="">
-                    <option value="" disabled>
-                      Selecione
-                    </option>
-                    <option value="female">Feminino</option>
-                    <option value="male">Masculino</option>
-                    <option value="non_binary">Não binário</option>
-                    <option value="other">Outro</option>
-                    <option value="prefer_not">Prefiro não informar</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor={`${baseId}-birth`} className={labelClass}>
-                    Data de nascimento
-                  </label>
-                  <input id={`${baseId}-birth`} name="birthDate" type="date" className={inputClass} />
-                </div>
+              <StatusBanner msg={accountMsg} />
+
+              <div>
+                <label htmlFor={`${baseId}-name`} className={labelClass}>
+                  Nome completo
+                </label>
+                <input
+                  id={`${baseId}-name`}
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                  placeholder="Seu nome"
+                />
               </div>
 
-              <div className="sm:max-w-md">
+              <div>
                 <label htmlFor={`${baseId}-phone`} className={labelClass}>
                   Número de celular
                 </label>
@@ -230,18 +350,23 @@ export function PerfilContent({
                   type="tel"
                   autoComplete="tel"
                   placeholder="(00) 00000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className={inputClass}
                 />
               </div>
             </div>
           </section>
 
+          {/* Segurança */}
           <section className={sectionCardClass}>
             <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
               <h2 className="text-lg font-semibold text-slate-900">Segurança</h2>
               <p className="mt-1 text-sm text-slate-500">Altere sua senha de acesso.</p>
             </div>
             <div className="space-y-5 px-5 py-6 sm:px-8 sm:py-7">
+              <StatusBanner msg={pwdMsg} />
+
               <div className="space-y-5 sm:max-w-md">
                 <div>
                   <label htmlFor={`${baseId}-pwd-current`} className={labelClass}>
@@ -252,6 +377,8 @@ export function PerfilContent({
                     name="currentPassword"
                     type="password"
                     autoComplete="current-password"
+                    value={currentPwd}
+                    onChange={(e) => setCurrentPwd(e.target.value)}
                     className={inputClass}
                   />
                 </div>
@@ -264,6 +391,8 @@ export function PerfilContent({
                     name="newPassword"
                     type="password"
                     autoComplete="new-password"
+                    value={newPwd}
+                    onChange={(e) => setNewPwd(e.target.value)}
                     className={inputClass}
                   />
                 </div>
@@ -276,18 +405,29 @@ export function PerfilContent({
                     name="confirmPassword"
                     type="password"
                     autoComplete="new-password"
+                    value={confirmPwd}
+                    onChange={(e) => setConfirmPwd(e.target.value)}
                     className={inputClass}
                   />
                 </div>
               </div>
-              <FieldHint>
-                O envio destes dados para atualizar a conta será ativado quando a API estiver
-                disponível.
-              </FieldHint>
+
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => void onSavePassword()}
+                  disabled={pwdLoading || !currentPwd || !newPwd || !confirmPwd}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {pwdLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                  Alterar senha
+                </button>
+              </div>
             </div>
           </section>
         </div>
 
+        {/* ── LOCALIZAÇÃO ─────────────────────────────────────────────────── */}
         <div
           id="perfil-panel-localizacao"
           role="tabpanel"
@@ -297,6 +437,7 @@ export function PerfilContent({
           <ProfileAddressSection initial={initialAddress} />
         </div>
 
+        {/* ── DOCUMENTOS ──────────────────────────────────────────────────── */}
         <div
           id="perfil-panel-documentos"
           role="tabpanel"
@@ -355,6 +496,7 @@ export function PerfilContent({
           </section>
         </div>
 
+        {/* ── RECOMENDAÇÕES ───────────────────────────────────────────────── */}
         <div
           id="perfil-panel-recomendacoes"
           role="tabpanel"
@@ -406,20 +548,22 @@ export function PerfilContent({
             </div>
           </section>
         </div>
-        </form>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-        <button
-          type="submit"
-          form={formId}
-          className="pointer-events-auto rounded-full bg-blue-600 px-10 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/40 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled
-          title="Aguarde a integração com a API para salvar"
-        >
-          Salvar informações
-        </button>
-      </div>
+      {/* ── Floating save — só aparece na aba Conta ─────────────────────────── */}
+      {tab === 'conta' && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <button
+            type="button"
+            onClick={() => void onSaveAccount()}
+            disabled={accountLoading || !accountDirty}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-600 px-10 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/40 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {accountLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+            {accountDirty ? 'Salvar alterações' : 'Sem alterações'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

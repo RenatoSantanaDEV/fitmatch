@@ -20,8 +20,8 @@ export const updateProfileLocationBodySchema = z.object({
   state: z.string().min(1).max(4),
   country: z.string().min(1).max(80),
   postalCode: cepDigits,
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export type UpdateProfileLocationBody = z.infer<typeof updateProfileLocationBodySchema>;
