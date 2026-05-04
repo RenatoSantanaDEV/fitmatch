@@ -60,7 +60,7 @@ export class ListMatchesUseCase {
               id: pro.id,
               name: user?.name ?? 'Profissional',
               bio: pro.bio,
-              specializations: pro.specializations,
+              areas: pro.areas,
               modalities: pro.modalities,
               yearsExperience: pro.yearsExperience,
               averageRating: pro.averageRating,

@@ -245,12 +245,12 @@ function ProfessorCard({ item, posicao }: { item: MatchWithProfessionalDTO; posi
           {/* Tags */}
           {pro && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {pro.specializations.map((s) => (
+              {pro.areas.map((a) => (
                 <span
-                  key={s}
+                  key={a.id}
                   className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600"
                 >
-                  {formatEnum(s)}
+                  {a.nome}
                 </span>
               ))}
               {pro.modalities.map((m) => (

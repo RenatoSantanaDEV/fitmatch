@@ -12,7 +12,7 @@ export function isProfessionalEligible(
 ): boolean {
   if (!professional.isAcceptingClients) return false;
   if (opts.requireVerified && !professional.isVerified) return false;
-  if (professional.specializations.length === 0) return false;
+  if (professional.areas.length === 0) return false;
   return true;
 }
 
@@ -67,7 +67,7 @@ export function hasSpecializationOverlap(
 ): boolean {
   if (student.preferredSpecializations.length === 0) return true;
   return student.preferredSpecializations.some((spec) =>
-    professional.specializations.includes(spec),
+    professional.areas.some((a) => a.slug === spec),
   );
 }
 

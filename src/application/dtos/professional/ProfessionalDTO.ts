@@ -1,11 +1,12 @@
 import { type Location } from '../../../domain/value-objects/Location';
 import { type PriceRange } from '../../../domain/value-objects/PriceRange';
+import { type AreaAtuacao } from '../../../domain/entities/Professional';
 import { SpecializationType } from '../../../domain/enums/SpecializationType';
 import { SessionModality } from '../../../domain/enums/SessionModality';
 
 export interface CreateProfessionalDTO {
   bio: string;
-  specializations: SpecializationType[];
+  areaIds: string[];
   modalities: SessionModality[];
   location: Location;
   sessionPrice: PriceRange;
@@ -14,7 +15,7 @@ export interface CreateProfessionalDTO {
 
 export interface UpdateProfessionalDTO {
   bio?: string;
-  specializations?: SpecializationType[];
+  areas?: AreaAtuacao[];
   modalities?: SessionModality[];
   location?: Location;
   sessionPrice?: PriceRange;
@@ -27,7 +28,7 @@ export interface ProfessionalResponseDTO {
   userId: string;
   displayName: string;
   bio: string;
-  specializations: SpecializationType[];
+  areas: AreaAtuacao[];
   location: Location;
   modalities: SessionModality[];
   sessionPrice: PriceRange;
@@ -56,14 +57,14 @@ export interface ListProfessionalsDTO {
 export interface AddCertificationDTO {
   name: string;
   issuingBody: string;
-  issueDate: string; // ISO date string
+  issueDate: string;
   expiryDate?: string;
   documentUrl?: string;
 }
 
 export interface SetAvailabilityDTO {
   dayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  startTime: string; // ISO datetime string
+  startTime: string;
   endTime: string;
   recurrence: 'ONCE' | 'WEEKLY';
   validFrom: string;

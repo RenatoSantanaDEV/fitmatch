@@ -154,12 +154,33 @@ model Student {
   @@map("students")
 }
 
+model AreaAtuacao {
+  id     String @id @default(cuid())
+  nome   String @unique
+  slug   String @unique
+  ativo  Boolean @default(true)
+  ordem  Int     @default(0)
+
+  profissionais ProfessionalArea[]
+
+  @@map("areas_atuacao")
+}
+
+model ProfessionalArea {
+  professionalId String
+  areaId         String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  area           AreaAtuacao  @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, areaId])
+  @@map("professional_areas")
+}
+
 model Professional {
   id                 String               @id @default(cuid())
   userId             String               @unique
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String
-  specializations    SpecializationType[]
   modalities         SessionModality[]
   yearsExperience    Int
   isVerified         Boolean              @default(false)
@@ -176,10 +197,12 @@ model Professional {
   locationPostal     String
   locationLat        Float?
   locationLng        Float?
+  crefNumber         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  areas                 ProfessionalArea[]
   specializationRecords Specialization[]
   certifications        Certification[]
   availabilities        Availability[]

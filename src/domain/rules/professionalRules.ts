@@ -11,7 +11,7 @@ export function assertProfessionalIsAcceptingClients(professional: Professional)
 }
 
 export function assertProfessionalHasSpecialization(professional: Professional): void {
-  if (professional.specializations.length === 0) {
+  if (professional.areas.length === 0) {
     throw new NoSpecializationError();
   }
 }

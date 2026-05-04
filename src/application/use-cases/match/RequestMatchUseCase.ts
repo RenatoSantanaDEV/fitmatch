@@ -127,7 +127,7 @@ function toMatchingCandidate(professional: Professional): MatchingCandidate {
   return {
     professionalId: professional.id,
     bio: professional.bio,
-    specializations: professional.specializations,
+    areaSlugs: professional.areas.map((a) => a.slug),
     modalities: professional.modalities,
     yearsExperience: professional.yearsExperience,
     averageRating: professional.averageRating,

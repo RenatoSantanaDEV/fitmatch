@@ -11,8 +11,36 @@ import { hashSync } from 'bcryptjs';
 const prisma = new PrismaClient();
 const SEED_PASSWORD_HASH = hashSync('seed-password-123', 10);
 
+const AREAS = [
+  { nome: 'Musculação / Personal', slug: 'PERSONAL_TRAINING', ordem: 1 },
+  { nome: 'Treino funcional', slug: 'FUNCTIONAL_TRAINING', ordem: 2 },
+  { nome: 'CrossFit', slug: 'CROSSFIT', ordem: 3 },
+  { nome: 'Pilates', slug: 'PILATES', ordem: 4 },
+  { nome: 'Yoga', slug: 'YOGA', ordem: 5 },
+  { nome: 'Meditação / Mindfulness', slug: 'MEDITATION', ordem: 6 },
+  { nome: 'Artes marciais', slug: 'MARTIAL_ARTS', ordem: 7 },
+  { nome: 'Natação', slug: 'SWIMMING', ordem: 8 },
+  { nome: 'Ciclismo', slug: 'CYCLING', ordem: 9 },
+  { nome: 'Dança', slug: 'DANCE', ordem: 10 },
+  { nome: 'Orientação nutricional', slug: 'NUTRITION_COACHING', ordem: 11 },
+  { nome: 'Reabilitação / Fisioterapia esportiva', slug: 'REHABILITATION', ordem: 12 },
+];
+
+async function seedAreas() {
+  for (const area of AREAS) {
+    await prisma.areaAtuacao.upsert({
+      where: { slug: area.slug },
+      update: { nome: area.nome, ordem: area.ordem },
+      create: area,
+    });
+  }
+  console.log(`✓ ${AREAS.length} áreas de atuação criadas/atualizadas`);
+}
+
 async function main() {
   console.log('Seeding FitMatch prototype data...');
+
+  await seedAreas();
 
   const studentUser = await prisma.user.upsert({
     where: { email: 'aluno@fitmatch.dev' },
@@ -55,10 +83,7 @@ async function main() {
       email: 'ana.personal@fitmatch.dev',
       name: 'Ana Martins',
       bio: 'Personal trainer com foco em emagrecimento e condicionamento. Treinos presenciais em SP e online.',
-      specializations: [
-        SpecializationType.PERSONAL_TRAINING,
-        SpecializationType.FUNCTIONAL_TRAINING,
-      ],
+      areaSlugs: ['PERSONAL_TRAINING', 'FUNCTIONAL_TRAINING'],
       modalities: [SessionModality.IN_PERSON, SessionModality.ONLINE, SessionModality.HYBRID],
       yearsExperience: 8,
       averageRating: 4.9,
@@ -73,7 +98,7 @@ async function main() {
       email: 'rafael.crossfit@fitmatch.dev',
       name: 'Rafael Souza',
       bio: 'Coach de CrossFit e treinamento funcional, 12 anos de box. Aulas presenciais em SP zona oeste.',
-      specializations: [SpecializationType.CROSSFIT, SpecializationType.FUNCTIONAL_TRAINING],
+      areaSlugs: ['CROSSFIT', 'FUNCTIONAL_TRAINING'],
       modalities: [SessionModality.IN_PERSON],
       yearsExperience: 12,
       averageRating: 4.7,
@@ -88,10 +113,7 @@ async function main() {
       email: 'paula.online@fitmatch.dev',
       name: 'Paula Ribeiro',
       bio: 'Personal online para alunos intermediários. Programas individualizados e acompanhamento por app.',
-      specializations: [
-        SpecializationType.PERSONAL_TRAINING,
-        SpecializationType.NUTRITION_COACHING,
-      ],
+      areaSlugs: ['PERSONAL_TRAINING', 'NUTRITION_COACHING'],
       modalities: [SessionModality.ONLINE],
       yearsExperience: 5,
       averageRating: 4.8,
@@ -106,7 +128,7 @@ async function main() {
       email: 'joao.yoga@fitmatch.dev',
       name: 'João Pereira',
       bio: 'Professor de Yoga e Meditação, aulas online e híbridas. Foco em redução de estresse e flexibilidade.',
-      specializations: [SpecializationType.YOGA, SpecializationType.MEDITATION],
+      areaSlugs: ['YOGA', 'MEDITATION'],
       modalities: [SessionModality.ONLINE, SessionModality.HYBRID],
       yearsExperience: 10,
       averageRating: 4.95,
@@ -121,7 +143,7 @@ async function main() {
       email: 'carla.pilates@fitmatch.dev',
       name: 'Carla Nogueira',
       bio: 'Pilates clínico e reabilitação postural. Atende presencialmente no Rio de Janeiro.',
-      specializations: [SpecializationType.PILATES, SpecializationType.REHABILITATION],
+      areaSlugs: ['PILATES', 'REHABILITATION'],
       modalities: [SessionModality.IN_PERSON, SessionModality.HYBRID],
       yearsExperience: 14,
       averageRating: 4.85,
@@ -136,7 +158,7 @@ async function main() {
       email: 'marcos.muaythai@fitmatch.dev',
       name: 'Marcos Lima',
       bio: 'Faixa preta de Muay Thai competitivo, 15 anos. Aulas presenciais em SP para iniciantes e avançados.',
-      specializations: [SpecializationType.MARTIAL_ARTS],
+      areaSlugs: ['MARTIAL_ARTS'],
       modalities: [SessionModality.IN_PERSON],
       yearsExperience: 15,
       averageRating: 4.6,
@@ -165,7 +187,7 @@ interface ProfessionalSeed {
   email: string;
   name: string;
   bio: string;
-  specializations: SpecializationType[];
+  areaSlugs: string[];
   modalities: SessionModality[];
   yearsExperience: number;
   averageRating: number;
@@ -188,7 +210,6 @@ async function upsertProfessional(p: ProfessionalSeed) {
     where: { userId: user.id },
     update: {
       bio: p.bio,
-      specializations: p.specializations,
       modalities: p.modalities,
       yearsExperience: p.yearsExperience,
       averageRating: p.averageRating,
@@ -207,7 +228,6 @@ async function upsertProfessional(p: ProfessionalSeed) {
     create: {
       userId: user.id,
       bio: p.bio,
-      specializations: p.specializations,
       modalities: p.modalities,
       yearsExperience: p.yearsExperience,
       averageRating: p.averageRating,
@@ -225,8 +245,20 @@ async function upsertProfessional(p: ProfessionalSeed) {
     },
   });
 
-  // One specialization record + a weekly availability so the data is richer.
-  for (const type of p.specializations) {
+  // Link areas via junction table
+  await prisma.professionalArea.deleteMany({ where: { professionalId: professional.id } });
+  for (const slug of p.areaSlugs) {
+    const area = await prisma.areaAtuacao.findUnique({ where: { slug } });
+    if (area) {
+      await prisma.professionalArea.create({
+        data: { professionalId: professional.id, areaId: area.id },
+      });
+    }
+  }
+
+  // Specialization records (detailed model — kept for compatibility)
+  for (const slug of p.areaSlugs) {
+    const type = slug as SpecializationType;
     await prisma.specialization.upsert({
       where: { professionalId_type: { professionalId: professional.id, type } },
       update: {},
@@ -251,7 +283,7 @@ async function upsertProfessional(p: ProfessionalSeed) {
     await prisma.availability.create({
       data: {
         professionalId: professional.id,
-        dayOfWeek: 1, // Monday
+        dayOfWeek: 1,
         startTime: start,
         endTime: end,
         recurrence: AvailabilityRecurrence.WEEKLY,

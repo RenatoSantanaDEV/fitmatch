@@ -1,12 +1,15 @@
-import type { Professional as PrismaProfessional } from '@prisma/client';
+import type { Professional as PrismaProfessional, ProfessionalArea, AreaAtuacao } from '@prisma/client';
 import { Professional } from '../../../domain/entities/Professional';
 import { type Location } from '../../../domain/value-objects/Location';
 import { type PriceRange } from '../../../domain/value-objects/PriceRange';
-import { SpecializationType } from '../../../domain/enums/SpecializationType';
 import { SessionModality } from '../../../domain/enums/SessionModality';
 
+type ProfessionalWithAreas = PrismaProfessional & {
+  areas: (ProfessionalArea & { area: AreaAtuacao })[];
+};
+
 export class ProfessionalMapper {
-  static toDomain(raw: PrismaProfessional): Professional {
+  static toDomain(raw: ProfessionalWithAreas): Professional {
     const location: Location = {
       street: raw.locationStreet,
       city: raw.locationCity,
@@ -27,11 +30,16 @@ export class ProfessionalMapper {
       id: raw.id,
       userId: raw.userId,
       bio: raw.bio,
-      specializations: raw.specializations as SpecializationType[],
+      areas: raw.areas.map((pa) => ({
+        id: pa.area.id,
+        nome: pa.area.nome,
+        slug: pa.area.slug,
+      })),
       location,
       modalities: raw.modalities as SessionModality[],
       sessionPrice,
       yearsExperience: raw.yearsExperience,
+      crefNumber: raw.crefNumber ?? undefined,
       isVerified: raw.isVerified,
       isAcceptingClients: raw.isAcceptingClients,
       averageRating: raw.averageRating,

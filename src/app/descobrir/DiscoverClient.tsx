@@ -404,14 +404,14 @@ export function DiscoverClient() {
                     <p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{p.bio}</p>
                   )}
 
-                  {/* Specializations */}
+                  {/* Áreas de atuação */}
                   <div className="flex flex-wrap gap-1.5">
-                    {p.specializations.slice(0, 3).map((s) => (
+                    {p.areas.slice(0, 3).map((a) => (
                       <span
-                        key={s}
+                        key={a.id}
                         className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600"
                       >
-                        {formatEnum(s)}
+                        {a.nome}
                       </span>
                     ))}
                     {p.modalities.slice(0, 2).map((m) => (

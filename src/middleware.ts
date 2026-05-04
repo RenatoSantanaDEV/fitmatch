@@ -8,12 +8,24 @@ const PUBLIC_PATHS = new Set([
   '/',
   '/login',
   '/register',
+  '/dar-aulas',
+  '/dar-aulas/cadastro',
   '/api/auth',
   '/api/users',
   '/api/professionals',
+  '/api/professional-signup',
 ]);
 
+function normalizedPath(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.replace(/\/+$/, '') || '/';
+  }
+  return pathname;
+}
+
 function isPublic(pathname: string): boolean {
+  const p = normalizedPath(pathname);
+  if (PUBLIC_PATHS.has(p)) return true;
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (pathname.startsWith('/api/auth/')) return true;
   if (pathname === '/api/student-signup') return true;

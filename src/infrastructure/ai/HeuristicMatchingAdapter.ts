@@ -78,7 +78,7 @@ function scoreCandidate(student: MatchingStudent, candidate: MatchingCandidate):
 function scoreSpecialization(student: MatchingStudent, candidate: MatchingCandidate): number {
   if (student.preferredSpecializations.length === 0) return 0.6;
   const overlap = student.preferredSpecializations.filter((s) =>
-    candidate.specializations.includes(s),
+    candidate.areaSlugs.includes(s as string),
   ).length;
   if (overlap === 0) return 0;
   const ratio = overlap / student.preferredSpecializations.length;

@@ -34,7 +34,7 @@ export class ListProfessionalsUseCase {
         userId: p.userId,
         displayName: names.get(p.userId) ?? 'Educador',
         bio: p.bio,
-        specializations: p.specializations,
+        areas: p.areas,
         location: p.location,
         modalities: p.modalities,
         sessionPrice: p.sessionPrice,

@@ -7,6 +7,8 @@ import {
 import { Professional } from '../../../domain/entities/Professional';
 import { ProfessionalMapper } from '../mappers/ProfessionalMapper';
 
+const areasInclude = { areas: { include: { area: true } } } as const;
+
 function haversineKm(
   lat1: number,
   lon1: number,
@@ -29,12 +31,18 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Professional | null> {
-    const raw = await this.prisma.professional.findUnique({ where: { id } });
+    const raw = await this.prisma.professional.findUnique({
+      where: { id },
+      include: areasInclude,
+    });
     return raw ? ProfessionalMapper.toDomain(raw) : null;
   }
 
   async findByUserId(userId: string): Promise<Professional | null> {
-    const raw = await this.prisma.professional.findUnique({ where: { userId } });
+    const raw = await this.prisma.professional.findUnique({
+      where: { userId },
+      include: areasInclude,
+    });
     return raw ? ProfessionalMapper.toDomain(raw) : null;
   }
 
@@ -45,9 +53,9 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       data: {
         userId: professional.userId,
         bio: professional.bio,
-        specializations: professional.specializations,
         modalities: professional.modalities,
         yearsExperience: professional.yearsExperience,
+        crefNumber: professional.crefNumber,
         isVerified: professional.isVerified,
         isAcceptingClients: professional.isAcceptingClients,
         priceMin: professional.sessionPrice.min,
@@ -61,6 +69,7 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         locationLat: professional.location.latitude,
         locationLng: professional.location.longitude,
       },
+      include: areasInclude,
     });
     return ProfessionalMapper.toDomain(raw);
   }
@@ -70,9 +79,9 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       where: { id },
       data: {
         bio: data.bio,
-        specializations: data.specializations,
         modalities: data.modalities,
         yearsExperience: data.yearsExperience,
+        crefNumber: data.crefNumber,
         isAcceptingClients: data.isAcceptingClients,
         priceMin: data.sessionPrice?.min,
         priceMax: data.sessionPrice?.max,
@@ -85,7 +94,24 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         locationLat: data.location?.latitude,
         locationLng: data.location?.longitude,
       },
+      include: areasInclude,
     });
+
+    if (data.areas !== undefined) {
+      await this.prisma.professionalArea.deleteMany({ where: { professionalId: id } });
+      if (data.areas.length > 0) {
+        await this.prisma.professionalArea.createMany({
+          data: data.areas.map((a) => ({ professionalId: id, areaId: a.id })),
+          skipDuplicates: true,
+        });
+      }
+      const refreshed = await this.prisma.professional.findUniqueOrThrow({
+        where: { id },
+        include: areasInclude,
+      });
+      return ProfessionalMapper.toDomain(refreshed);
+    }
+
     return ProfessionalMapper.toDomain(raw);
   }
 
@@ -104,7 +130,11 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       ...(filters.isAcceptingClients !== undefined && { isAcceptingClients: filters.isAcceptingClients }),
       ...(filters.maxPriceInCents && { priceMin: { lte: filters.maxPriceInCents } }),
       ...(filters.specializations?.length && {
-        specializations: { hasSome: filters.specializations },
+        areas: {
+          some: {
+            area: { slug: { in: filters.specializations as string[] } },
+          },
+        },
       }),
       ...(filters.modalities?.length && {
         modalities: { hasSome: filters.modalities },
@@ -122,6 +152,7 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         where,
         take: takeCap,
         orderBy: { averageRating: 'desc' },
+        include: areasInclude,
       });
       const lat = filters.nearLat!;
       const lng = filters.nearLng!;
@@ -139,12 +170,18 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       return { data, total, page, limit };
     }
 
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.professional.findMany({ where, skip, take: limit, orderBy: { averageRating: 'desc' } }),
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.professional.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { averageRating: 'desc' },
+        include: areasInclude,
+      }),
       this.prisma.professional.count({ where }),
     ]);
 
-    return { data: data.map(ProfessionalMapper.toDomain), total, page, limit };
+    return { data: rows.map(ProfessionalMapper.toDomain), total, page, limit };
   }
 
   async updateRating(professionalId: string, average: number, total: number): Promise<void> {

@@ -24,7 +24,7 @@ export interface MatchingStudent {
 export interface MatchingCandidate {
   professionalId: string;
   bio: string;
-  specializations: SpecializationType[];
+  areaSlugs: string[];
   modalities: SessionModality[];
   yearsExperience: number;
   averageRating: number | null;

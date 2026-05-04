@@ -180,7 +180,6 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               {/* Student */}
               <OpenAuthModal
                 mode="login"
-                role="student"
                 callbackUrl="/recomendacoes"
                 className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-emerald-100 bg-white p-8 text-left shadow-sm transition-all hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1"
               >
@@ -209,10 +208,9 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               </OpenAuthModal>
 
               {/* Professional */}
-              <OpenAuthModal
-                mode="register-professional"
-                callbackUrl="/perfil"
-                className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 text-left shadow-sm transition-all hover:border-orange-300 hover:shadow-xl hover:-translate-y-1"
+              <Link
+                href="/dar-aulas"
+                className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 text-left shadow-sm transition-all hover:border-orange-300 hover:shadow-xl hover:-translate-y-1"
               >
                 <div
                   className="pointer-events-none absolute right-0 top-0 h-48 w-48 translate-x-16 -translate-y-16 rounded-full bg-orange-400/10 transition-all duration-500 group-hover:bg-orange-400/20 group-hover:scale-110"
@@ -233,10 +231,10 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                     compatíveis com sua especialidade.
                   </p>
                   <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-orange-600 transition-all group-hover:gap-3">
-                    Criar meu perfil <ArrowRight className="size-4" aria-hidden />
+                    Dar aulas na FitMatch <ArrowRight className="size-4" aria-hidden />
                   </span>
                 </div>
-              </OpenAuthModal>
+              </Link>
             </div>
           </div>
         </section>

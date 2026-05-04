@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuthModal } from '../auth/AuthModalContext';
 
 export function SiteHeader() {
-  const { openLogin, openRegister, openRegisterProfessional } = useAuthModal();
+  const { openLogin, openRegister } = useAuthModal();
   const { data: session, status } = useSession();
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -48,7 +48,6 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
 
-        {/* Logo */}
         <Link
           href="/"
           className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90 active:opacity-80"
@@ -66,14 +65,12 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* Navigation */}
         <nav
           className="flex min-w-0 flex-1 items-center justify-end gap-1"
           aria-label="Navegação principal"
         >
           {status === 'authenticated' ? (
             <>
-              {/* Nav links */}
               <div className="hidden items-center gap-0.5 sm:flex">
                 <Link
                   href="/descobrir"
@@ -108,7 +105,6 @@ export function SiteHeader() {
                 </Link>
               </div>
 
-              {/* Mobile nav */}
               <div className="flex items-center gap-0.5 sm:hidden">
                 <Link href="/descobrir" className="header-icon-btn flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-emerald-700">
                   <Search className="size-4" aria-hidden />
@@ -118,7 +114,6 @@ export function SiteHeader() {
                 </Link>
               </div>
 
-              {/* Account dropdown */}
               <div className="relative ml-1 shrink-0" ref={accountRef}>
                 <button
                   type="button"
@@ -204,15 +199,13 @@ export function SiteHeader() {
               </div>
             </>
           ) : (
-            /* unauthenticated — also shown when status === 'unauthenticated' */
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => openRegisterProfessional({ callbackUrl: '/perfil' })}
-                className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] sm:flex"
+              <Link
+                href="/dar-aulas"
+                className="hidden items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] sm:flex"
               >
                 Dar aulas
-              </button>
+              </Link>
               <button
                 type="button"
                 onClick={() => openLogin({ callbackUrl: '/recomendacoes' })}

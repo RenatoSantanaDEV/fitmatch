@@ -11,13 +11,12 @@ import {
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { OauthProviderFlags } from '../../lib/oauthConfig';
-import { LoginForm, type AuthLoginRole } from './LoginForm';
+import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
-import { ProfessionalRegisterForm } from './ProfessionalRegisterForm';
 
-type ModalMode = 'login' | 'register' | 'register-professional';
+type ModalMode = 'login' | 'register';
 
-type OpenLoginOpts = { callbackUrl?: string; role?: AuthLoginRole };
+type OpenLoginOpts = { callbackUrl?: string };
 type OpenRegisterOpts = { callbackUrl?: string };
 
 type AuthModalContextValue = {
@@ -42,16 +41,15 @@ export function AuthModalProvider({
   children: ReactNode;
   oauth: OauthProviderFlags;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<ModalMode>('login');
   const [callbackUrl, setCallbackUrl] = useState('/recomendacoes');
-  const [loginRole, setLoginRole] = useState<AuthLoginRole>('student');
 
   const close = useCallback(() => setOpen(false), []);
 
   const openLogin = useCallback((opts?: OpenLoginOpts) => {
     setCallbackUrl(safeRelativeCallback(opts?.callbackUrl ?? null));
-    setLoginRole(opts?.role ?? 'student');
     setMode('login');
     setOpen(true);
   }, []);
@@ -62,11 +60,13 @@ export function AuthModalProvider({
     setOpen(true);
   }, []);
 
-  const openRegisterProfessional = useCallback((opts?: OpenRegisterOpts) => {
-    setCallbackUrl(safeRelativeCallback(opts?.callbackUrl ?? null));
-    setMode('register-professional');
-    setOpen(true);
-  }, []);
+  const openRegisterProfessional = useCallback(
+    (_opts?: OpenRegisterOpts) => {
+      setOpen(false);
+      router.push('/dar-aulas');
+    },
+    [router],
+  );
 
   const value = useMemo(
     () => ({ openLogin, openRegister, openRegisterProfessional, close }),
@@ -91,8 +91,6 @@ export function AuthModalProvider({
     };
   }, [open]);
 
-  const isProfessional = mode === 'register-professional';
-
   return (
     <AuthModalContext.Provider value={value}>
       {children}
@@ -105,11 +103,7 @@ export function AuthModalProvider({
           }}
         >
           <div
-            className={`relative max-h-[90vh] w-full overflow-y-auto rounded-2xl border bg-white shadow-2xl ${
-              isProfessional
-                ? 'max-w-lg border-slate-700/30'
-                : 'max-w-md border-slate-200'
-            }`}
+            className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-modal-title"
@@ -118,22 +112,17 @@ export function AuthModalProvider({
             <button
               type="button"
               onClick={close}
-              className={`absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full transition ${
-                isProfessional
-                  ? 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
               aria-label="Fechar"
             >
               <span className="text-xl leading-none" aria-hidden>×</span>
             </button>
 
-            <div className={isProfessional ? 'p-5 pt-11 sm:p-7 sm:pt-11' : 'p-5 pt-10 sm:p-7 sm:pt-11'}>
+            <div className="p-5 pt-10 sm:p-7 sm:pt-11">
               {mode === 'login' && (
                 <LoginForm
                   oauth={oauth}
                   callbackUrl={callbackUrl}
-                  initialRole={loginRole}
                   onSwitchToRegister={() => setMode('register')}
                   onClose={close}
                   variant="modal"
@@ -147,15 +136,6 @@ export function AuthModalProvider({
                   onSuccess={close}
                   onClose={close}
                   variant="modal"
-                />
-              )}
-              {mode === 'register-professional' && (
-                <ProfessionalRegisterForm
-                  oauth={oauth}
-                  callbackUrl={callbackUrl}
-                  onSwitchToLogin={() => setMode('login')}
-                  onSuccess={close}
-                  onClose={close}
                 />
               )}
             </div>
@@ -175,7 +155,7 @@ function safeRelativeCallback(raw: string | null | undefined): string {
 export function AuthUrlSync() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { openLogin, openRegister, openRegisterProfessional } = useAuthModal();
+  const { openLogin, openRegister } = useAuthModal();
 
   useEffect(() => {
     const auth = searchParams.get('auth');
@@ -184,10 +164,13 @@ export function AuthUrlSync() {
     const cb = safeRelativeCallback(searchParams.get('callbackUrl'));
     const role = searchParams.get('role');
 
+    if (auth === 'register' && role === 'professional') {
+      router.replace('/dar-aulas', { scroll: false });
+      return;
+    }
+
     if (auth === 'login') {
-      openLogin({ callbackUrl: cb, role: role === 'professional' ? 'professional' : 'student' });
-    } else if (role === 'professional') {
-      openRegisterProfessional({ callbackUrl: cb });
+      openLogin({ callbackUrl: cb });
     } else {
       openRegister({ callbackUrl: cb });
     }
@@ -199,7 +182,7 @@ export function AuthUrlSync() {
     const next =
       url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '');
     router.replace(next, { scroll: false });
-  }, [searchParams, router, openLogin, openRegister, openRegisterProfessional]);
+  }, [searchParams, router, openLogin, openRegister]);
 
   return null;
 }
