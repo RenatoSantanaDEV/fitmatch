@@ -82,6 +82,8 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         modalities: data.modalities,
         yearsExperience: data.yearsExperience,
         crefNumber: data.crefNumber,
+        classDynamics: data.classDynamics,
+        sessionDurationMinutes: data.sessionDurationMinutes,
         isAcceptingClients: data.isAcceptingClients,
         priceMin: data.sessionPrice?.min,
         priceMax: data.sessionPrice?.max,

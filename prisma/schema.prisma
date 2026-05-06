@@ -197,7 +197,9 @@ model Professional {
   locationPostal     String
   locationLat        Float?
   locationLng        Float?
-  crefNumber         String?
+  crefNumber             String?
+  classDynamics          String?
+  sessionDurationMinutes Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

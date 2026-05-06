@@ -16,18 +16,24 @@ export async function PATCH(req: NextRequest) {
   const professional = await professionalRepo.findByUserId(session.user.id);
   if (!professional) return forbidden();
 
-  const { name, bio, yearsExperience, crefNumber, phone } = parsed.data;
+  const { name, bio, yearsExperience, crefNumber, phone, isAcceptingClients, classDynamics, sessionDurationMinutes } = parsed.data;
 
   try {
-    const userPatch: Record<string, unknown> = { name };
+    const userPatch: Record<string, unknown> = {};
+    if (name !== undefined) userPatch.name = name;
     if (phone !== undefined) userPatch.phone = phone ?? null;
 
-    await userRepo.update(session.user.id, userPatch as Parameters<typeof userRepo.update>[1]);
+    if (Object.keys(userPatch).length > 0) {
+      await userRepo.update(session.user.id, userPatch as Parameters<typeof userRepo.update>[1]);
+    }
 
     await professionalRepo.update(professional.id, {
       bio: bio !== undefined ? bio : professional.bio,
-      yearsExperience,
+      yearsExperience: yearsExperience !== undefined ? yearsExperience : professional.yearsExperience,
       crefNumber: crefNumber !== undefined ? (crefNumber ?? undefined) : professional.crefNumber,
+      isAcceptingClients: isAcceptingClients !== undefined ? isAcceptingClients : professional.isAcceptingClients,
+      classDynamics: classDynamics !== undefined ? (classDynamics ?? undefined) : professional.classDynamics,
+      sessionDurationMinutes: sessionDurationMinutes !== undefined ? (sessionDurationMinutes ?? undefined) : professional.sessionDurationMinutes,
     });
 
     return noContent();

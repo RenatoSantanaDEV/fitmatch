@@ -40,6 +40,8 @@ export class ProfessionalMapper {
       sessionPrice,
       yearsExperience: raw.yearsExperience,
       crefNumber: raw.crefNumber ?? undefined,
+      classDynamics: raw.classDynamics ?? undefined,
+      sessionDurationMinutes: raw.sessionDurationMinutes ?? undefined,
       isVerified: raw.isVerified,
       isAcceptingClients: raw.isAcceptingClients,
       averageRating: raw.averageRating,

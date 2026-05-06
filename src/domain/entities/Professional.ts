@@ -18,6 +18,8 @@ export interface Professional {
   readonly sessionPrice: PriceRange;
   readonly yearsExperience: number;
   readonly crefNumber?: string;
+  readonly classDynamics?: string;
+  readonly sessionDurationMinutes?: number;
   readonly isVerified: boolean;
   readonly isAcceptingClients: boolean;
   readonly averageRating: number | null;
