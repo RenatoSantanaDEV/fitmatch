@@ -28,14 +28,20 @@ const PROMPTS = {
     'Melhore esta descrição de como são as aulas deste professor de fitness, tornando-a mais clara e atrativa para potenciais alunos.',
 } as const;
 
-const SYSTEM_PROMPT = `Você é um especialista em marketing pessoal para profissionais de fitness no Brasil.
+function buildSystemPrompt(professorName: string | undefined) {
+  const nameRule = professorName?.trim()
+    ? `- O nome real do professor é "${professorName.trim()}" — use-o no texto, nunca substitua por placeholder como [Seu Nome]`
+    : '- Não invente nem substitua o nome do professor por placeholder';
+  return `Você é um especialista em marketing pessoal para profissionais de fitness no Brasil.
 Regras obrigatórias:
 - Escreva em português do Brasil
 - Mantenha o tom pessoal e autêntico do texto original
 - Remova qualquer informação de contato: telefone, e-mail, redes sociais, @handles, endereços, links
 - Máximo de 500 palavras
 - Não invente informações que não estavam no original
+${nameRule}
 - Retorne apenas o texto melhorado, sem explicações ou comentários adicionais`;
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -70,8 +76,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { text?: string; type?: string };
-  const { text, type } = body;
+  const body = (await req.json().catch(() => ({}))) as { text?: string; type?: string; name?: string };
+  const { text, type, name } = body;
 
   if (!text || typeof text !== 'string' || text.trim().length < 20) {
     return NextResponse.json(
@@ -92,7 +98,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: buildSystemPrompt(name) },
           { role: 'user', content: `${taskPrompt}\n\nTexto original:\n${text.trim()}` },
         ],
         temperature: 0.7,

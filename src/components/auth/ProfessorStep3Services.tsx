@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  FileText,
   Loader2,
   MapPin,
   Monitor,
@@ -14,6 +15,7 @@ import {
   RefreshCw,
   ShieldAlert,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -92,10 +94,12 @@ function RegistrationProgress({ pct }: { pct: number }) {
 
 function ImproveButton({
   text,
+  name,
   onImproved,
   disabled,
 }: {
   text: string;
+  name?: string;
   onImproved: (v: string) => void;
   disabled?: boolean;
 }) {
@@ -112,7 +116,7 @@ function ImproveButton({
       const res = await fetch('/api/ai/improve-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, type: 'classDynamics' }),
+        body: JSON.stringify({ text, type: 'classDynamics', name }),
       });
       const data = (await res.json()) as { improved?: string; error?: string };
       if (!res.ok || !data.improved) {
@@ -125,7 +129,7 @@ function ImproveButton({
     } finally {
       setLoading(false);
     }
-  }, [text, onImproved]);
+  }, [text, name, onImproved]);
   return (
     <div className="flex flex-col items-end gap-1">
       <button
@@ -149,8 +153,8 @@ function ImproveButton({
 const fieldClass =
   'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
 
-type Sub = 1 | 2 | 3 | 4;
-const TOTAL = 4;
+type Sub = 1 | 2 | 3 | 4 | 5;
+const TOTAL = 5;
 
 interface PanelConfig {
   accent: string;
@@ -223,9 +227,28 @@ const PANELS: PanelConfig[] = [
       },
     ],
   },
+  {
+    accent: 'Certificados',
+    title: 'e currículo',
+    desc: 'Opcional — comprove sua formação com documentos e certificados.',
+    tips: [
+      {
+        heading: 'Documentos aumentam confiança',
+        body: 'Professores com certificados verificados convertem mais. Envie diplomas, certificações ou seu currículo em PDF.',
+      },
+      {
+        heading: 'Formatos aceitos',
+        body: 'PDF, JPEG, PNG ou WebP · máx. 10 MB por arquivo. Você pode adicionar mais documentos depois no seu perfil.',
+      },
+      {
+        heading: 'Campo opcional',
+        body: 'Pode pular agora e adicionar depois nas configurações do perfil.',
+      },
+    ],
+  },
 ];
 
-export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
+export function ProfessorStep3Services({ redirectTo, initialName }: { redirectTo: string; initialName?: string }) {
   const router = useRouter();
 
   const [sub, setSub] = useState<Sub>(1);
@@ -252,6 +275,56 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // ── Sub 5: Certificados ───────────────────────────────────────────────────
+  type CertEntry = { id: string; name: string; status: 'uploading' | 'done' | 'error'; error?: string };
+  const [certEntries, setCertEntries] = useState<CertEntry[]>([]);
+  const certUploading = certEntries.some((c) => c.status === 'uploading');
+
+  async function uploadCertFile(file: File) {
+    const fakeName = file.name.replace(/\.[^.]+$/, '').slice(0, 120) || 'Certificado';
+    const tempId = `tmp-${Date.now()}-${Math.random()}`;
+    setCertEntries((prev) => [...prev, { id: tempId, name: fakeName, status: 'uploading' }]);
+
+    try {
+      // 1. Create cert record with placeholder metadata
+      const today = new Date().toISOString().slice(0, 10);
+      const certRes = await fetch('/api/profile/professional/certificates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fakeName, issuingBody: 'Não informado', issueDate: today }),
+      });
+      if (!certRes.ok) throw new Error('Erro ao criar certificado.');
+      const cert = (await certRes.json()) as { id: string };
+
+      // 2. Upload file to the created cert
+      const form = new FormData();
+      form.append('document', file);
+      const docRes = await fetch(`/api/profile/professional/certificates/${cert.id}/document`, {
+        method: 'POST',
+        body: form,
+      });
+      if (!docRes.ok) throw new Error('Erro ao enviar arquivo.');
+
+      setCertEntries((prev) =>
+        prev.map((c) => (c.id === tempId ? { ...c, id: cert.id, status: 'done' } : c)),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro no upload.';
+      setCertEntries((prev) =>
+        prev.map((c) => (c.id === tempId ? { ...c, status: 'error', error: msg } : c)),
+      );
+    }
+  }
+
+  async function removeCert(id: string) {
+    if (id.startsWith('tmp-')) {
+      setCertEntries((prev) => prev.filter((c) => c.id !== id));
+      return;
+    }
+    setCertEntries((prev) => prev.filter((c) => c.id !== id));
+    await fetch(`/api/profile/professional/certificates/${id}`, { method: 'DELETE' }).catch(() => {});
+  }
 
   useEffect(() => {
     fetch('/api/areas-atuacao')
@@ -285,7 +358,7 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
   function toggleArea(id: string) {
     setSelectedAreaIds((prev) => {
       const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) n.delete(id); else n.add(id);
       return n;
     });
   }
@@ -319,19 +392,29 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
 
   function onNext() {
     setError(null);
-    if (sub < TOTAL) setSub((s) => (s + 1) as Sub);
-    else void onSave();
+    if (sub < 4) {
+      setSub((s) => (s + 1) as Sub);
+      return;
+    }
+    if (sub === 4) {
+      // Save services data, then show certificate step
+      void onSave().then((ok) => { if (ok) setSub(5); });
+      return;
+    }
+    // sub === 5: certificate step done, navigate
+    router.push(redirectTo);
+    router.refresh();
   }
 
-  async function onSave() {
+  async function onSave(): Promise<boolean> {
     if (classDynamicsContact) {
       setError(classDynamicsContact);
-      return;
+      return false;
     }
     const priceVal = price !== '' ? parseInt(price, 10) : undefined;
     if (priceVal !== undefined && isNaN(priceVal)) {
       setError('Valor da diária inválido.');
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -354,7 +437,7 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
         const msg =
           typeof body.error === 'string' ? body.error : 'Não foi possível salvar os serviços.';
         setError(msg);
-        return;
+        return false;
       }
 
       const dur = resolvedDuration();
@@ -370,8 +453,7 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
         }).catch(() => {});
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      return true;
     } finally {
       setLoading(false);
     }
@@ -650,6 +732,7 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
                     </label>
                     <ImproveButton
                       text={classDynamics}
+                      name={initialName}
                       onImproved={setClassDynamics}
                       disabled={!!classDynamicsContact}
                     />
@@ -704,7 +787,6 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
                       max={100000}
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') void onSave(); }}
                       placeholder="Ex.: 120"
                       className={`${fieldClass} pl-9`}
                       autoFocus
@@ -713,6 +795,79 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
                 </label>
                 <p className="text-xs text-slate-400">
                   Você pode alterar o valor a qualquer momento no painel do perfil.
+                </p>
+              </div>
+            )}
+
+            {/* Sub 5: Certificados e currículo */}
+            {sub === 5 && (
+              <div className="flex flex-col gap-5">
+                {/* Lista de arquivos adicionados */}
+                {certEntries.length > 0 && (
+                  <ul className="flex flex-col gap-2">
+                    {certEntries.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                      >
+                        <FileText className="size-4 shrink-0 text-slate-400" aria-hidden />
+                        <span className="flex-1 truncate text-sm text-slate-700">{c.name}</span>
+                        {c.status === 'uploading' && (
+                          <Loader2 className="size-4 shrink-0 animate-spin text-blue-500" aria-hidden />
+                        )}
+                        {c.status === 'done' && (
+                          <CheckCircle2 className="size-4 shrink-0 text-emerald-500" aria-hidden />
+                        )}
+                        {c.status === 'error' && (
+                          <span className="text-xs text-red-500">{c.error ?? 'Erro'}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void removeCert(c.id)}
+                          className="ml-1 shrink-0 rounded p-0.5 text-slate-400 transition hover:text-red-500"
+                          aria-label="Remover"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Botão de seleção */}
+                <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 px-6 py-8 text-center transition hover:border-blue-300 hover:bg-blue-50/40">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <FileText className="size-6" aria-hidden />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      Clique para selecionar um arquivo
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">PDF, JPEG, PNG ou WebP · máx. 10 MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    multiple
+                    disabled={certUploading}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      e.target.value = '';
+                      files.forEach((f) => void uploadCertFile(f));
+                    }}
+                  />
+                </label>
+
+                <p className="text-center text-xs text-slate-400">
+                  Você pode adicionar mais documentos depois no seu perfil.{' '}
+                  <button
+                    type="button"
+                    onClick={() => { router.push(redirectTo); router.refresh(); }}
+                    className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  >
+                    Pular por agora
+                  </button>
                 </p>
               </div>
             )}
@@ -740,17 +895,19 @@ export function ProfessorStep3Services({ redirectTo }: { redirectTo: string }) {
             <button
               type="button"
               onClick={onNext}
-              disabled={!canNext || loading}
+              disabled={!canNext || loading || certUploading}
               className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-8 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-600/30 transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              {(loading || certUploading) && <Loader2 className="size-4 animate-spin" aria-hidden />}
               {loading
                 ? 'Salvando…'
-                : sub === TOTAL
-                  ? 'Concluir e ver meu perfil'
-                  : 'Próxima'}
-              {!loading && sub < TOTAL && <ChevronRight className="size-4" aria-hidden />}
-              {!loading && sub === TOTAL && <CheckCircle2 className="size-4" aria-hidden />}
+                : certUploading
+                  ? 'Enviando…'
+                  : sub === TOTAL
+                    ? 'Concluir e ver meu perfil'
+                    : 'Próxima'}
+              {!loading && !certUploading && sub < TOTAL && <ChevronRight className="size-4" aria-hidden />}
+              {!loading && !certUploading && sub === TOTAL && <CheckCircle2 className="size-4" aria-hidden />}
             </button>
           </div>
 

@@ -11,9 +11,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import Image from 'next/image';
 import { SessionModality } from '../../domain/enums/SessionModality';
 import { ProfileAddressSection, type ProfileInitialAddress } from './ProfileAddressSection';
-import Image from 'next/image';
 
 const inputClass =
   'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
@@ -28,6 +28,7 @@ const PROF_TABS = [
   { id: 'profissional' as const, label: 'Perfil Profissional' },
   { id: 'servicos' as const, label: 'Serviços' },
   { id: 'localizacao' as const, label: 'Localização' },
+  { id: 'certificados' as const, label: 'Certificados' },
 ] as const;
 
 type ProfTabId = (typeof PROF_TABS)[number]['id'];
@@ -125,8 +126,8 @@ function detectContact(text: string): string | null {
   return null;
 }
 
-function ImproveButton({ text, type, onImproved, disabled }: {
-  text: string; type: 'bio' | 'classDynamics'; onImproved: (v: string) => void; disabled?: boolean;
+function ImproveButton({ text, type, name, onImproved, disabled }: {
+  text: string; type: 'bio' | 'classDynamics'; name?: string; onImproved: (v: string) => void; disabled?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -134,12 +135,12 @@ function ImproveButton({ text, type, onImproved, disabled }: {
     if (text.trim().length < 20) { setErr('Escreva pelo menos 20 caracteres.'); return; }
     setLoading(true); setErr(null);
     try {
-      const res = await fetch('/api/ai/improve-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, type }) });
+      const res = await fetch('/api/ai/improve-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, type, name }) });
       const data = await res.json().catch(() => ({})) as { improved?: string; error?: string };
       if (!res.ok || !data.improved) { setErr(data.error ?? 'Não foi possível melhorar o texto.'); return; }
       onImproved(data.improved);
     } catch { setErr('Erro de conexão.'); } finally { setLoading(false); }
-  }, [text, type, onImproved]);
+  }, [text, type, name, onImproved]);
   return (
     <div className="flex flex-col items-end gap-1">
       <button type="button" onClick={() => void run()} disabled={loading || disabled || text.trim().length < 20}
@@ -158,6 +159,7 @@ export function PerfilProfissionalContent({
   name: initialName,
   email,
   phone: initialPhone,
+  avatarUrl: initialAvatarUrl,
   bio: initialBio,
   crefNumber: initialCref,
   yearsExperience: initialYears,
@@ -165,7 +167,7 @@ export function PerfilProfissionalContent({
   modalities: initialModalitiesProp,
   selectedAreaIds: initialAreaIdsProp,
   priceMin: initialPriceMinNum,
-  priceMax: initialPriceMaxNum,
+  priceMax: _initialPriceMaxNum,
   locationCity: initialLocationCity,
   locationState: initialLocationState,
   classDynamics,
@@ -176,6 +178,7 @@ export function PerfilProfissionalContent({
   name: string | null;
   email: string | null;
   phone: string | null;
+  avatarUrl?: string | null;
   bio: string;
   crefNumber: string | null;
   yearsExperience: number;
@@ -190,7 +193,9 @@ export function PerfilProfissionalContent({
   sessionDurationMinutes: number | null;
 }) {
   const [tab, setTab] = useState<ProfTabId>('conta');
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialAvatarUrl ?? null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const baseId = useId();
 
   // ── Conta: dados pessoais ─────────────────────────────────────────────────
@@ -301,19 +306,130 @@ export function PerfilProfissionalContent({
     }
   }, [tab]);
 
-  const photoRef = useRef<string | null>(null);
-  photoRef.current = photoPreview;
-  useEffect(() => {
-    return () => {
-      if (photoRef.current?.startsWith('blob:')) URL.revokeObjectURL(photoRef.current);
-    };
-  }, []);
-
-  function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoLoading(true);
+    setPhotoMsg(null);
+    const form = new FormData();
+    form.append('photo', file);
+    try {
+      const res = await fetch('/api/profile/photo', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!res.ok) {
+        setPhotoMsg({ type: 'err', text: data.error ?? 'Erro ao enviar foto.' });
+      } else {
+        setPhotoUrl(data.url ?? null);
+        setPhotoMsg({ type: 'ok', text: 'Foto atualizada!' });
+      }
+    } catch {
+      setPhotoMsg({ type: 'err', text: 'Erro ao enviar foto.' });
+    } finally {
+      setPhotoLoading(false);
+    }
+  }
+
+  // ── Certificados ─────────────────────────────────────────────────────────
+  type Cert = {
+    id: string;
+    name: string;
+    issuingBody: string;
+    issueDate: string;
+    expiryDate: string | null;
+    documentUrl: string | null;
+    isVerified: boolean;
+  };
+  const [certs, setCerts] = useState<Cert[]>([]);
+  const [certsLoading, setCertsLoading] = useState(false);
+  const [certsMsg, setCertsMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [certForm, setCertForm] = useState<{
+    name: string;
+    issuingBody: string;
+    issueDate: string;
+    expiryDate: string;
+  } | null>(null);
+  const [certSaving, setCertSaving] = useState(false);
+  const [docUploading, setDocUploading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== 'certificados' || certsLoading) return;
+    setCertsLoading(true);
+    fetch('/api/profile/professional/certificates')
+      .then((r) => r.json())
+      .then((data: Cert[]) => setCerts(data))
+      .catch(() => setCertsMsg({ type: 'err', text: 'Erro ao carregar certificados.' }))
+      .finally(() => setCertsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  async function onAddCert() {
+    if (!certForm) return;
+    setCertSaving(true);
+    setCertsMsg(null);
+    try {
+      const res = await fetch('/api/profile/professional/certificates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: certForm.name,
+          issuingBody: certForm.issuingBody,
+          issueDate: certForm.issueDate,
+          expiryDate: certForm.expiryDate || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({})) as Cert & { error?: string };
+      if (!res.ok) {
+        setCertsMsg({ type: 'err', text: (data as { error?: string }).error ?? 'Erro ao salvar.' });
+      } else {
+        setCerts((prev) => [data, ...prev]);
+        setCertForm(null);
+        setCertsMsg({ type: 'ok', text: 'Certificado adicionado.' });
+      }
+    } catch {
+      setCertsMsg({ type: 'err', text: 'Erro ao salvar certificado.' });
+    } finally {
+      setCertSaving(false);
+    }
+  }
+
+  async function onDeleteCert(id: string) {
+    setCertsMsg(null);
+    try {
+      const res = await fetch(`/api/profile/professional/certificates/${id}`, { method: 'DELETE' });
+      if (res.ok || res.status === 204) {
+        setCerts((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        setCertsMsg({ type: 'err', text: 'Erro ao remover certificado.' });
+      }
+    } catch {
+      setCertsMsg({ type: 'err', text: 'Erro ao remover certificado.' });
+    }
+  }
+
+  async function onUploadDocument(certId: string, file: File) {
+    setDocUploading(certId);
+    const form = new FormData();
+    form.append('document', file);
+    try {
+      const res = await fetch(`/api/profile/professional/certificates/${certId}/document`, {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!res.ok) {
+        setCertsMsg({ type: 'err', text: data.error ?? 'Erro ao enviar documento.' });
+      } else {
+        setCerts((prev) =>
+          prev.map((c) => (c.id === certId ? { ...c, documentUrl: data.url ?? null } : c)),
+        );
+        setCertsMsg({ type: 'ok', text: 'Documento enviado.' });
+      }
+    } catch {
+      setCertsMsg({ type: 'err', text: 'Erro ao enviar documento.' });
+    } finally {
+      setDocUploading(null);
+    }
   }
 
   function toggleArea(id: string) {
@@ -441,7 +557,6 @@ export function PerfilProfissionalContent({
     classDyn,
     duration,
     customDuration,
-    sessionDurationMinutes,
   ]);
 
   // ── Save: serviços ────────────────────────────────────────────────────────
@@ -547,8 +662,15 @@ export function PerfilProfissionalContent({
               <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
                 <div className="relative shrink-0">
                   <div className="flex size-24 items-center justify-center overflow-hidden rounded-2xl bg-blue-600 text-2xl font-bold text-white shadow-lg shadow-blue-900/20 ring-4 ring-white sm:size-28 sm:text-3xl">
-                    {photoPreview ? (
-                      <Image src={photoPreview} alt="" className="size-full object-cover" />
+                    {photoUrl ? (
+                      <Image
+                        src={photoUrl}
+                        alt=""
+                        width={112}
+                        height={112}
+                        className="size-full object-cover"
+                        unoptimized
+                      />
                     ) : (
                       initial
                     )}
@@ -558,6 +680,7 @@ export function PerfilProfissionalContent({
                     accept="image/jpeg,image/png,image/webp"
                     className="sr-only"
                     id={`${baseId}-photo`}
+                    disabled={photoLoading}
                     onChange={onPhotoChange}
                   />
                   <label
@@ -565,7 +688,11 @@ export function PerfilProfissionalContent({
                     className="absolute -bottom-1 -right-1 flex size-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-slate-900 text-white shadow-md transition hover:bg-slate-800"
                     title="Alterar foto"
                   >
-                    <Camera className="size-4" aria-hidden />
+                    {photoLoading ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Camera className="size-4" aria-hidden />
+                    )}
                     <span className="sr-only">Alterar foto do perfil</span>
                   </label>
                 </div>
@@ -576,9 +703,11 @@ export function PerfilProfissionalContent({
                   <span className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
                     Professor
                   </span>
-                  <FieldHint>
-                    A foto é apenas visual nesta versão — o envio ao servidor será ligado em breve.
-                  </FieldHint>
+                  {photoMsg ? (
+                    <StatusBanner msg={photoMsg} />
+                  ) : (
+                    <FieldHint>JPEG, PNG ou WebP · máx. 5 MB</FieldHint>
+                  )}
                 </div>
               </div>
             </div>
@@ -733,11 +862,20 @@ export function PerfilProfissionalContent({
                       ? 'Bio muito curta — adicione mais detalhes para aumentar sua visibilidade.'
                       : null}
                 </p>
-                <span
-                  className={`shrink-0 text-xs ${bio.length >= 1800 ? 'text-amber-600 font-medium' : 'text-slate-400'}`}
-                >
-                  {bio.length} / 2000
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={`text-xs ${bio.length >= 1800 ? 'text-amber-600 font-medium' : 'text-slate-400'}`}
+                  >
+                    {bio.length} / 2000
+                  </span>
+                  <ImproveButton
+                    text={bio}
+                    type="bio"
+                    name={name ?? undefined}
+                    onImproved={setBio}
+                    disabled={!!bioContact}
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -924,6 +1062,7 @@ export function PerfilProfissionalContent({
                     <ImproveButton
                       text={classDyn}
                       type="classDynamics"
+                      name={name}
                       onImproved={setClassDyn}
                       disabled={!!classDynContact}
                     />
@@ -1135,6 +1274,175 @@ export function PerfilProfissionalContent({
           hidden={tab !== 'localizacao'}
         >
           <ProfileAddressSection initial={initialAddress} />
+        </div>
+
+        {/* ── CERTIFICADOS ─────────────────────────────────────────────── */}
+        <div
+          id="perfil-panel-certificados"
+          role="tabpanel"
+          aria-labelledby="perfil-tab-certificados"
+          hidden={tab !== 'certificados'}
+          className="space-y-6"
+        >
+          <section className={sectionCardClass}>
+            <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
+              <h2 className="text-lg font-semibold text-slate-900">Certificados e formações</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Adicione seus cursos, graduações e certificações. Você pode anexar o documento em PDF ou imagem.
+              </p>
+            </div>
+
+            <div className="space-y-5 px-5 py-6 sm:px-8 sm:py-7">
+              <StatusBanner msg={certsMsg} />
+
+              {certsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-slate-400" aria-hidden />
+                </div>
+              ) : certs.length === 0 && !certForm ? (
+                <p className="text-sm text-slate-500">Nenhum certificado adicionado ainda.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {certs.map((cert) => (
+                    <li
+                      key={cert.id}
+                      className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-start sm:gap-4"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{cert.name}</p>
+                        <p className="text-sm text-slate-500 truncate">{cert.issuingBody}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {new Date(cert.issueDate).toLocaleDateString('pt-BR')}
+                          {cert.expiryDate
+                            ? ` — ${new Date(cert.expiryDate).toLocaleDateString('pt-BR')}`
+                            : ''}
+                        </p>
+                        {cert.documentUrl && (
+                          <a
+                            href={cert.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+                          >
+                            Ver documento
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <label
+                          className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                          title={cert.documentUrl ? 'Substituir documento' : 'Anexar documento'}
+                        >
+                          {docUploading === cert.id ? (
+                            <Loader2 className="size-3 animate-spin inline" aria-hidden />
+                          ) : (
+                            cert.documentUrl ? 'Substituir' : 'Anexar'
+                          )}
+                          <input
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/png,image/webp"
+                            className="sr-only"
+                            disabled={docUploading !== null}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = '';
+                              if (file) void onUploadDocument(cert.id, file);
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => void onDeleteCert(cert.id)}
+                          className="rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {certForm ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-5 space-y-4">
+                  <p className="text-sm font-semibold text-slate-800">Novo certificado</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className={labelClass}>Nome do curso / certificação</label>
+                      <input
+                        type="text"
+                        value={certForm.name}
+                        onChange={(e) => setCertForm((f) => f && { ...f, name: e.target.value })}
+                        className={inputClass}
+                        placeholder="Ex.: Personal Trainer CREF"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Instituição</label>
+                      <input
+                        type="text"
+                        value={certForm.issuingBody}
+                        onChange={(e) => setCertForm((f) => f && { ...f, issuingBody: e.target.value })}
+                        className={inputClass}
+                        placeholder="Ex.: CONFEF"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Data de emissão</label>
+                      <input
+                        type="date"
+                        value={certForm.issueDate}
+                        onChange={(e) => setCertForm((f) => f && { ...f, issueDate: e.target.value })}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>
+                        Validade <span className="text-slate-400 font-normal">(opcional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={certForm.expiryDate}
+                        onChange={(e) => setCertForm((f) => f && { ...f, expiryDate: e.target.value })}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setCertForm(null)}
+                      className="rounded-full border border-slate-200 px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onAddCert()}
+                      disabled={
+                        certSaving ||
+                        !certForm.name.trim() ||
+                        !certForm.issuingBody.trim() ||
+                        !certForm.issueDate
+                      }
+                      className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {certSaving && <Loader2 className="size-4 animate-spin" aria-hidden />}
+                      Salvar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCertForm({ name: '', issuingBody: '', issueDate: '', expiryDate: '' })}
+                  className="mt-2 rounded-full border border-dashed border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600"
+                >
+                  + Adicionar certificado
+                </button>
+              )}
+            </div>
+          </section>
         </div>
       </div>
 

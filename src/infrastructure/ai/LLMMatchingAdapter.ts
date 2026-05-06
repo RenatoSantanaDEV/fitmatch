@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import {
   IMatchingPort,
@@ -173,21 +172,13 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function loadSystemPrompt(): string {
-  // Using `new URL(..., import.meta.url)` so Next.js output file tracing
-  // picks up the markdown file and copies it to the serverless bundle.
-  const promptUrl = new URL('./prompts/matchSystemPrompt.md', import.meta.url);
-  try {
-    return readFileSync(fileURLToPath(promptUrl), 'utf8');
-  } catch {
-    // Fallback for unusual runtimes: resolve from repo cwd.
-    const fallback = join(
-      process.cwd(),
-      'src',
-      'infrastructure',
-      'ai',
-      'prompts',
-      'matchSystemPrompt.md',
-    );
-    return readFileSync(fallback, 'utf8');
-  }
+  const promptPath = join(
+    process.cwd(),
+    'src',
+    'infrastructure',
+    'ai',
+    'prompts',
+    'matchSystemPrompt.md',
+  );
+  return readFileSync(promptPath, 'utf8');
 }

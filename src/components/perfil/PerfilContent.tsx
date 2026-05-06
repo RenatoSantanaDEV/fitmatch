@@ -1,8 +1,9 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { Camera, Check, FileText, GraduationCap, IdCard, Loader2, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useState, type ReactNode } from 'react';
 import { ProfileAddressSection, type ProfileInitialAddress } from './ProfileAddressSection';
 
 const inputClass =
@@ -79,6 +80,7 @@ export function PerfilContent({
   email,
   role,
   phone: initialPhone,
+  avatarUrl: initialAvatarUrl,
 }: {
   initial: string;
   initialAddress: ProfileInitialAddress | null;
@@ -86,8 +88,11 @@ export function PerfilContent({
   email: string | null;
   phone: string | null;
   role: string | null;
+  avatarUrl?: string | null;
 }) {
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialAvatarUrl ?? null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [tab, setTab] = useState<ProfileTabId>('conta');
   const baseId = useId();
 
@@ -127,19 +132,28 @@ export function PerfilContent({
   }, [tab]);
 
   // ── Photo ─────────────────────────────────────────────────────────────────
-  const photoRef = useRef<string | null>(null);
-  photoRef.current = photoPreview;
-  useEffect(() => {
-    return () => {
-      if (photoRef.current?.startsWith('blob:')) URL.revokeObjectURL(photoRef.current);
-    };
-  }, []);
-
-  function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoLoading(true);
+    setPhotoMsg(null);
+    const form = new FormData();
+    form.append('photo', file);
+    try {
+      const res = await fetch('/api/profile/photo', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!res.ok) {
+        setPhotoMsg({ type: 'err', text: data.error ?? 'Erro ao enviar foto.' });
+      } else {
+        setPhotoUrl(data.url ?? null);
+        setPhotoMsg({ type: 'ok', text: 'Foto atualizada!' });
+      }
+    } catch {
+      setPhotoMsg({ type: 'err', text: 'Erro ao enviar foto.' });
+    } finally {
+      setPhotoLoading(false);
+    }
   }
 
   // ── Save: dados pessoais (diff parcial) ───────────────────────────────────
@@ -273,11 +287,17 @@ export function PerfilContent({
                 <div className="relative shrink-0">
                   <div
                     className="flex size-24 items-center justify-center overflow-hidden rounded-2xl bg-blue-600 text-2xl font-bold text-white shadow-lg shadow-blue-900/20 ring-4 ring-white sm:size-28 sm:text-3xl"
-                    aria-hidden={!!photoPreview}
+                    aria-hidden={!!photoUrl}
                   >
-                    {photoPreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photoPreview} alt="" className="size-full object-cover" />
+                    {photoUrl ? (
+                      <Image
+                        src={photoUrl}
+                        alt=""
+                        width={112}
+                        height={112}
+                        className="size-full object-cover"
+                        unoptimized
+                      />
                     ) : (
                       initial
                     )}
@@ -287,14 +307,19 @@ export function PerfilContent({
                     accept="image/jpeg,image/png,image/webp"
                     className="sr-only"
                     id={`${baseId}-photo`}
+                    disabled={photoLoading}
                     onChange={onPhotoChange}
                   />
                   <label
                     htmlFor={`${baseId}-photo`}
-                    className="absolute -bottom-1 -right-1 flex size-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-slate-900 text-white shadow-md transition hover:bg-slate-800"
+                    className="absolute -bottom-1 -right-1 flex size-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-slate-900 text-white shadow-md transition hover:bg-slate-800 disabled:opacity-50"
                     title="Alterar foto"
                   >
-                    <Camera className="size-4" aria-hidden />
+                    {photoLoading ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Camera className="size-4" aria-hidden />
+                    )}
                     <span className="sr-only">Alterar foto do perfil</span>
                   </label>
                 </div>
@@ -305,9 +330,11 @@ export function PerfilContent({
                   <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                     {roleLabel}
                   </span>
-                  <FieldHint>
-                    A foto é apenas visual nesta versão — o envio ao servidor será ligado em breve.
-                  </FieldHint>
+                  {photoMsg ? (
+                    <StatusBanner msg={photoMsg} />
+                  ) : (
+                    <FieldHint>JPEG, PNG ou WebP · máx. 5 MB</FieldHint>
+                  )}
                 </div>
               </div>
             </div>

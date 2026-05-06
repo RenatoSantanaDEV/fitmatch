@@ -36,6 +36,10 @@ export default async function PerfilPage() {
   const dbUser = await userRepo.findById(session.user.id);
   const name = dbUser?.name ?? session.user.name;
   const phone = dbUser?.phone ?? null;
+  const rawAvatar = dbUser?.avatarUrl ?? null;
+  const avatarUrl = rawAvatar?.startsWith('https://')
+    ? `/api/profile/avatar/${session.user.id}`
+    : rawAvatar;
   const initial = (name?.trim()?.charAt(0) || email?.charAt(0) || '?').toUpperCase();
 
   if (role === 'PROFESSIONAL') {
@@ -49,6 +53,7 @@ export default async function PerfilPage() {
           name={name ?? null}
           email={email ?? null}
           phone={phone}
+          avatarUrl={avatarUrl}
           initialAddress={initialAddress}
           bio={professional?.bio ?? ''}
           crefNumber={professional?.crefNumber ?? null}
@@ -79,6 +84,7 @@ export default async function PerfilPage() {
         email={email ?? null}
         role={role ?? null}
         phone={phone}
+        avatarUrl={avatarUrl}
       />
     </main>
   );

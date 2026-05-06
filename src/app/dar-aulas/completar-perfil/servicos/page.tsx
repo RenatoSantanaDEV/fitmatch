@@ -13,5 +13,5 @@ export default async function ProfessorServicosPage() {
   if (!session?.user?.id) redirect('/dar-aulas');
   if (session.user.role !== 'PROFESSIONAL') redirect('/perfil');
 
-  return <ProfessorStep3Services redirectTo="/perfil" />;
+  return <ProfessorStep3Services redirectTo="/perfil" initialName={session.user.name ?? ''} />;
 }

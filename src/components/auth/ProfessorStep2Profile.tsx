@@ -1,8 +1,9 @@
 'use client';
 
-import { AlertCircle, ArrowLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, Check, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 
 const PHONE_RE = /(\+?55\s?)?(\(?\d{2}\)?\s?)?\d{4,5}[-.\s]?\d{4}/;
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i;
@@ -46,10 +47,12 @@ function RegistrationProgress({ pct }: { pct: number }) {
 
 function ImproveButton({
   text,
+  name,
   onImproved,
   disabled,
 }: {
   text: string;
+  name?: string;
   onImproved: (v: string) => void;
   disabled?: boolean;
 }) {
@@ -66,7 +69,7 @@ function ImproveButton({
       const res = await fetch('/api/ai/improve-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, type: 'bio' }),
+        body: JSON.stringify({ text, type: 'bio', name }),
       });
       const data = (await res.json()) as { improved?: string; error?: string };
       if (!res.ok || !data.improved) {
@@ -79,7 +82,7 @@ function ImproveButton({
     } finally {
       setLoading(false);
     }
-  }, [text, onImproved]);
+  }, [text, name, onImproved]);
   return (
     <div className="flex flex-col items-end gap-1">
       <button
@@ -103,8 +106,8 @@ function ImproveButton({
 const fieldClass =
   'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
 
-type Sub = 1 | 2 | 3;
-const TOTAL = 3;
+type Sub = 1 | 2 | 3 | 4;
+const TOTAL = 4;
 
 interface PanelConfig {
   accent: string;
@@ -164,15 +167,36 @@ const PANELS: PanelConfig[] = [
       },
     ],
   },
+  {
+    accent: 'Sua',
+    title: 'foto de perfil',
+    desc: 'Professores com foto recebem muito mais contatos.',
+    tips: [
+      {
+        heading: 'Primeira impressão',
+        body: 'Alunos escolhem professores em segundos. Uma foto profissional aumenta a confiança e o número de contatos.',
+      },
+      {
+        heading: 'Dicas de foto',
+        body: 'Fundo neutro, boa iluminação e um sorriso natural. Não precisa ser de estúdio — uma foto com celular bem tirada já funciona.',
+      },
+      {
+        heading: 'Campo opcional',
+        body: 'Pode pular agora e adicionar depois no seu perfil.',
+      },
+    ],
+  },
 ];
 
 export function ProfessorStep2Profile({
+  initialName,
   redirectTo,
 }: {
   initialName?: string;
   redirectTo: string;
 }) {
   const router = useRouter();
+  const photoInputId = useId();
 
   const [sub, setSub] = useState<Sub>(1);
   const [bio, setBio] = useState('');
@@ -181,6 +205,13 @@ export function ProfessorStep2Profile({
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // ── Sub 4: Foto ───────────────────────────────────────────────────────────
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoUploaded, setPhotoUploaded] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const initial = (initialName?.trim()?.charAt(0) ?? '?').toUpperCase();
 
   const bioContact = detectContact(bio);
   const panel = PANELS[sub - 1];
@@ -191,7 +222,7 @@ export function ProfessorStep2Profile({
       ? bio.trim().length >= 30 && !bioContact
       : sub === 2
         ? years !== '' && !isNaN(parseInt(years, 10)) && parseInt(years, 10) >= 0
-        : true;
+        : true; // sub 3 (phone) and sub 4 (photo) are optional
 
   function onBack() {
     setError(null);
@@ -201,15 +232,26 @@ export function ProfessorStep2Profile({
 
   function onNext() {
     setError(null);
-    if (sub < TOTAL) setSub((s) => (s + 1) as Sub);
-    else void onSave();
+    if (sub < 3) {
+      setSub((s) => (s + 1) as Sub);
+      return;
+    }
+    if (sub === 3) {
+      void saveProfileData().then((ok) => {
+        if (ok) setSub(4);
+      });
+      return;
+    }
+
+    router.push(redirectTo);
+    router.refresh();
   }
 
-  async function onSave() {
+  async function saveProfileData(): Promise<boolean> {
     const yrs = parseInt(years, 10);
     if (isNaN(yrs) || yrs < 0 || yrs > 60) {
       setError('Informe um valor válido para anos de experiência (0 a 60).');
-      return;
+      return false;
     }
     setLoading(true);
     try {
@@ -233,18 +275,46 @@ export function ProfessorStep2Profile({
               ? (body.error as { message?: string }[]).map((i) => i.message).join(', ')
               : 'Não foi possível salvar.';
         setError(msg);
-        return;
+        return false;
       }
-      router.push(redirectTo);
-      router.refresh();
+      return true;
     } finally {
       setLoading(false);
     }
   }
 
+  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoUploaded(false);
+    setPhotoError(null);
+    setPhotoUploading(true);
+
+    const form = new FormData();
+    form.append('photo', file);
+    try {
+      const res = await fetch('/api/profile/photo', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!res.ok) {
+        setPhotoError(data.error ?? 'Erro ao enviar foto.');
+        setPhotoPreview(null);
+      } else {
+        setPhotoUploaded(true);
+      }
+    } catch {
+      setPhotoError('Erro ao enviar foto.');
+      setPhotoPreview(null);
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
+
   return (
     <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      {/* ── Painel esquerdo ──────────────────────────────────────────────────── */}
       <aside className="flex flex-col gap-6 bg-slate-900 px-6 py-8 text-white lg:w-[38%] lg:px-10 lg:py-12">
         <button
           type="button"
@@ -282,7 +352,6 @@ export function ProfessorStep2Profile({
         </div>
       </aside>
 
-      {/* ── Painel direito ───────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col bg-white">
         <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-6 py-10 sm:px-10 sm:py-14">
           <div className="mb-10">
@@ -293,11 +362,10 @@ export function ProfessorStep2Profile({
           </div>
 
           <div className="flex-1">
-            {/* Sub 1: Bio */}
             {sub === 1 && (
               <div>
                 <div className="mb-1.5 flex justify-end">
-                  <ImproveButton text={bio} onImproved={setBio} disabled={!!bioContact} />
+                  <ImproveButton text={bio} name={initialName} onImproved={setBio} disabled={!!bioContact} />
                 </div>
                 <textarea
                   id="bio"
@@ -338,7 +406,6 @@ export function ProfessorStep2Profile({
               </div>
             )}
 
-            {/* Sub 2: Credenciais */}
             {sub === 2 && (
               <div className="flex flex-col gap-6">
                 <div>
@@ -357,9 +424,7 @@ export function ProfessorStep2Profile({
                     required
                     value={years}
                     onChange={(e) => setYears(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && canNext) onNext();
-                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && canNext) onNext(); }}
                     placeholder="Ex.: 5"
                     className={`${fieldClass} sm:max-w-[200px]`}
                     autoFocus
@@ -371,9 +436,7 @@ export function ProfessorStep2Profile({
                     className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500"
                   >
                     Número do CREF{' '}
-                    <span className="text-[10px] font-normal normal-case text-slate-400">
-                      (opcional)
-                    </span>
+                    <span className="text-[10px] font-normal normal-case text-slate-400">(opcional)</span>
                   </label>
                   <input
                     id="cref"
@@ -386,14 +449,12 @@ export function ProfessorStep2Profile({
                     className={`${fieldClass} sm:max-w-xs`}
                   />
                   <p className="mt-1.5 text-xs text-slate-400">
-                    Registro no Conselho Regional de Educação Física. Aparece como selo no seu
-                    perfil.
+                    Registro no Conselho Regional de Educação Física. Aparece como selo no seu perfil.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Sub 3: WhatsApp */}
             {sub === 3 && (
               <div>
                 <label
@@ -401,9 +462,7 @@ export function ProfessorStep2Profile({
                   className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500"
                 >
                   WhatsApp / Celular{' '}
-                  <span className="text-[10px] font-normal normal-case text-slate-400">
-                    (opcional)
-                  </span>
+                  <span className="text-[10px] font-normal normal-case text-slate-400">(opcional)</span>
                 </label>
                 <input
                   id="phone"
@@ -412,15 +471,82 @@ export function ProfessorStep2Profile({
                   autoComplete="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') void onSave();
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') onNext(); }}
                   placeholder="(00) 00000-0000"
                   className={`${fieldClass} sm:max-w-sm`}
                   autoFocus
                 />
                 <p className="mt-1.5 text-xs text-slate-400">
                   Visível apenas para alunos que agendarem uma sessão — nunca exibido na busca.
+                </p>
+              </div>
+            )}
+
+            {sub === 4 && (
+              <div className="flex flex-col items-center gap-6 pt-2">
+                <div className="relative">
+                  <div className="flex size-32 items-center justify-center overflow-hidden rounded-2xl bg-blue-600 text-4xl font-bold text-white shadow-lg shadow-blue-900/20 ring-4 ring-slate-100">
+                    {photoPreview ? (
+                      <Image
+                        src={photoPreview}
+                        alt=""
+                        width={128}
+                        height={128}
+                        className="size-full object-cover"
+                        unoptimized
+                      />
+                    ) : initial}
+                  </div>
+                  {photoUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
+                      <Loader2 className="size-8 animate-spin text-white" aria-hidden />
+                    </div>
+                  )}
+                  {photoUploaded && !photoUploading && (
+                    <div className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white">
+                      <Check className="size-4 text-white" aria-hidden />
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  id={photoInputId}
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={photoUploading}
+                  onChange={onPhotoChange}
+                />
+                <label
+                  htmlFor={photoInputId}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+                >
+                  <Camera className="size-4" aria-hidden />
+                  {photoPreview ? 'Trocar foto' : 'Escolher foto'}
+                </label>
+
+                {photoError && (
+                  <p className="flex items-center gap-1.5 text-sm text-red-600">
+                    <AlertCircle className="size-4 shrink-0" aria-hidden />
+                    {photoError}
+                  </p>
+                )}
+                {photoUploaded && (
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                    <Check className="size-4 shrink-0" aria-hidden />
+                    Foto salva com sucesso!
+                  </p>
+                )}
+
+                <p className="max-w-xs text-center text-xs text-slate-400">
+                  JPEG, PNG ou WebP · máx. 5 MB.{' '}
+                  <button
+                    type="button"
+                    onClick={() => { router.push(redirectTo); router.refresh(); }}
+                    className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  >
+                    Pular por agora
+                  </button>
                 </p>
               </div>
             )}
@@ -448,12 +574,18 @@ export function ProfessorStep2Profile({
             <button
               type="button"
               onClick={onNext}
-              disabled={!canNext || loading}
+              disabled={!canNext || loading || photoUploading}
               className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-8 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-600/30 transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              {loading ? 'Salvando…' : sub === TOTAL ? 'Continuar para serviços' : 'Próxima'}
-              {!loading && sub < TOTAL && <ChevronRight className="size-4" aria-hidden />}
+              {(loading || photoUploading) && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              {loading
+                ? 'Salvando…'
+                : photoUploading
+                  ? 'Enviando foto…'
+                  : sub === TOTAL
+                    ? 'Continuar para serviços'
+                    : 'Próxima'}
+              {!loading && !photoUploading && sub < TOTAL && <ChevronRight className="size-4" aria-hidden />}
             </button>
           </div>
         </div>
