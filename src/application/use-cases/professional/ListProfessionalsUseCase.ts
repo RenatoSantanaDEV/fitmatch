@@ -19,7 +19,6 @@ export class ListProfessionalsUseCase {
       nearLat: dto.nearLat,
       nearLng: dto.nearLng,
       radiusKm: dto.radiusKm,
-      isVerified: true,
       isAcceptingClients: true,
       page: dto.page ?? 1,
       limit: dto.limit ?? 20,
