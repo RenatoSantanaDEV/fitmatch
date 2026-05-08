@@ -6,6 +6,7 @@ export interface ProfessionalFilters {
   city?: string;
   cityInsensitive?: boolean;
   state?: string;
+  nameQuery?: string;
   specializations?: SpecializationType[];
   modalities?: SessionModality[];
   isVerified?: boolean;

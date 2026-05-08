@@ -43,7 +43,15 @@ export class SearchProfessionalsWithAiUseCase {
     const hasSemantic = (specs?.length ?? 0) > 0 || (mods?.length ?? 0) > 0;
     const hasPlace = !!mergedCity || !!mergedState || hasGeo;
 
-    if (!hasPlace && !hasSemantic) {
+    const trimmedQuery = input.query?.trim() ?? '';
+    const looksLikeName =
+      !hasSemantic &&
+      !hasPlace &&
+      trimmedQuery.length > 0 &&
+      trimmedQuery.length <= 60 &&
+      /^[\p{L}\s'-]+$/u.test(trimmedQuery);
+
+    if (!hasPlace && !hasSemantic && !looksLikeName) {
       return {
         interpreted: {
           specializations: [],
@@ -65,6 +73,7 @@ export class SearchProfessionalsWithAiUseCase {
     const result = await this.listProfessionals.execute({
       city: mergedCity || undefined,
       state: mergedState || undefined,
+      nameQuery: looksLikeName ? trimmedQuery : undefined,
       specializations: specs,
       modalities: mods,
       maxPriceInCents: input.maxPriceInCents,
@@ -76,6 +85,11 @@ export class SearchProfessionalsWithAiUseCase {
       limit: input.limit,
     });
 
-    return { interpreted, result };
+    return {
+      interpreted: looksLikeName
+        ? { ...interpreted, summary: `Buscando professores com o nome "${trimmedQuery}".` }
+        : interpreted,
+      result,
+    };
   }
 }

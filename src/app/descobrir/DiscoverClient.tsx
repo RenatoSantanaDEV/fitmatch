@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -11,10 +10,11 @@ import {
   Search,
   Sparkles,
   Star,
-  SlidersHorizontal,
   Wifi,
-  WifiOff,
+  Monitor,
+  Users,
   X,
+  ChevronDown,
   Dumbbell,
   Waves,
   Wind,
@@ -27,13 +27,29 @@ import {
 import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
 import type { InterpretedProfessionalSearch } from '../../lib/interpretProfessionalSearch';
 
-function formatEnum(value: string): string {
-  return value
-    .toLowerCase()
-    .split('_')
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(' ');
+type ModalityFilter = 'ONLINE' | 'IN_PERSON' | 'HYBRID' | null;
+
+const MODALITY_OPTIONS: { value: ModalityFilter; label: string; icon: React.ElementType; desc: string }[] = [
+  { value: 'ONLINE',    label: 'Online',     icon: Wifi,     desc: 'Aulas por videochamada, de qualquer lugar' },
+  { value: 'IN_PERSON', label: 'Presencial', icon: Users,    desc: 'Aulas na sua cidade, com localização' },
+  { value: 'HYBRID',    label: 'Híbrido',    icon: Monitor,  desc: 'Online e presencial combinados' },
+];
+
+function needsLocation(m: ModalityFilter) {
+  return m === 'IN_PERSON' || m === 'HYBRID';
 }
+
+const SPECIALTY_CHIPS = [
+  { label: 'Personal Trainer', value: 'personal trainer', icon: Dumbbell },
+  { label: 'Pilates',          value: 'pilates',          icon: PersonStanding },
+  { label: 'CrossFit',         value: 'crossfit',         icon: FlameKindling },
+  { label: 'Yoga',             value: 'yoga',             icon: Wind },
+  { label: 'Musculação',       value: 'musculação',       icon: Dumbbell },
+  { label: 'Funcional',        value: 'funcional',        icon: Zap },
+  { label: 'Natação',          value: 'natação',          icon: Waves },
+  { label: 'Reabilitação',     value: 'reabilitação',     icon: HeartPulse },
+  { label: 'Corrida',          value: 'corrida',          icon: Activity },
+];
 
 function formatMoney(min: number, max: number, cur: string): string {
   try {
@@ -46,25 +62,8 @@ function formatMoney(min: number, max: number, cur: string): string {
 }
 
 function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
+  return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 }
-
-const SPECIALTY_CHIPS = [
-  { label: 'Personal Trainer', value: 'personal trainer', icon: Dumbbell },
-  { label: 'Pilates', value: 'pilates', icon: PersonStanding },
-  { label: 'CrossFit', value: 'crossfit', icon: FlameKindling },
-  { label: 'Yoga', value: 'yoga', icon: Wind },
-  { label: 'Musculação', value: 'musculação', icon: Dumbbell },
-  { label: 'Funcional', value: 'funcional', icon: Zap },
-  { label: 'Natação', value: 'natação', icon: Waves },
-  { label: 'Reabilitação', value: 'reabilitação', icon: HeartPulse },
-  { label: 'Corrida', value: 'corrida', icon: Activity },
-];
 
 const CARD_GRADIENTS = [
   'from-emerald-400 to-teal-600',
@@ -79,13 +78,14 @@ const CARD_GRADIENTS = [
 
 function CardSkeleton() {
   return (
-    <li className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-      <div className="h-44 animate-pulse bg-slate-200" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+    <li className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="size-24 shrink-0 animate-pulse rounded-xl bg-slate-200 sm:size-32" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="h-4 w-1/3 animate-pulse rounded bg-slate-200" />
+        <div className="h-3 w-1/4 animate-pulse rounded bg-slate-100" />
         <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
         <div className="h-3 w-4/5 animate-pulse rounded bg-slate-100" />
-        <div className="flex gap-2 pt-1">
+        <div className="mt-auto flex gap-2">
           <div className="h-5 w-16 animate-pulse rounded-full bg-slate-100" />
           <div className="h-5 w-16 animate-pulse rounded-full bg-slate-100" />
         </div>
@@ -108,101 +108,100 @@ function ProfessionalCard({
   const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
   const initials = getInitials(p.displayName);
 
+  const modalityLabel = p.modalities.length > 0
+    ? p.modalities.map((m) => {
+        if (m === 'ONLINE') return 'Online';
+        if (m === 'IN_PERSON') return 'Presencial';
+        return 'Híbrido';
+      }).join(' · ')
+    : null;
+
   return (
-    <li className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:shadow-md hover:-translate-y-0.5">
-      {/* Card visual header */}
-      <div className={`relative bg-gradient-to-br ${gradient} h-44 flex items-end`}>
-        {/* Overlay avatar */}
+    <li className="group flex cursor-pointer gap-0 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:shadow-md hover:-translate-y-0.5">
+      {/* Photo */}
+      <div className={`relative shrink-0 bg-gradient-to-br ${gradient} w-28 sm:w-36`}>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex size-20 items-center justify-center rounded-full bg-white/20 text-3xl font-extrabold text-white ring-4 ring-white/30 backdrop-blur-sm">
-            {initials}
-          </div>
+          {p.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/profile/avatar/${p.userId}`}
+              alt={p.displayName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-3xl font-extrabold text-white/90">{initials}</span>
+          )}
         </div>
-
-        {/* Gradient overlay at bottom for text */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent px-4 pb-3 pt-8">
-          <p className="truncate font-bold text-white drop-shadow">{p.displayName}</p>
-          <p className="flex items-center gap-1 text-xs text-white/80 drop-shadow">
-            <MapPin className="size-3 shrink-0" aria-hidden />
-            {p.location.city}, {p.location.state}
-          </p>
-        </div>
-
-        {/* Favorite button */}
-        <button
-          type="button"
-          onClick={() => onToggleFav(p.id)}
-          className={`absolute right-3 top-3 flex size-8 items-center justify-center rounded-full shadow transition ${
-            isFav
-              ? 'bg-rose-500 text-white hover:bg-rose-600'
-              : 'bg-white/90 text-slate-400 hover:text-rose-500'
-          }`}
-          aria-label={isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-        >
-          <Heart
-            className={`size-4 ${isFav ? 'fill-white' : ''}`}
-            strokeWidth={isFav ? 0 : 1.75}
-            aria-hidden
-          />
-        </button>
-
-        {/* Verified badge */}
         {p.isVerified && (
-          <span className="absolute left-3 top-3 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold text-white shadow">
             ✓ Verificado
           </span>
         )}
       </div>
 
-      {/* Card body */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        {/* Bio */}
-        {p.bio && (
-          <p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{p.bio}</p>
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-bold text-slate-900 leading-tight">{p.displayName}</p>
+            <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+              <MapPin className="size-3 shrink-0" aria-hidden />
+              {p.location.city}, {p.location.state}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onToggleFav(p.id)}
+            className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border transition ${
+              isFav
+                ? 'border-rose-200 bg-rose-50 text-rose-500'
+                : 'border-slate-200 bg-white text-slate-300 hover:border-rose-200 hover:text-rose-400'
+            }`}
+            aria-label={isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          >
+            <Heart className={`size-3.5 ${isFav ? 'fill-rose-500' : ''}`} strokeWidth={isFav ? 0 : 1.75} aria-hidden />
+          </button>
+        </div>
+
+        {/* Rating + modality */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {p.averageRating != null ? (
+            <span className="flex items-center gap-1 font-semibold text-amber-500">
+              <Star className="size-3 fill-amber-400" aria-hidden />
+              {p.averageRating.toFixed(1)}
+              <span className="font-normal text-slate-400">({p.totalReviews})</span>
+            </span>
+          ) : (
+            <span className="text-slate-400">Sem avaliações</span>
+          )}
+          {modalityLabel && (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+              {modalityLabel}
+            </span>
+          )}
+        </div>
+
+        {/* Areas */}
+        {p.areas.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {p.areas.slice(0, 3).map((a) => (
+              <span key={a.id} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                {a.nome}
+              </span>
+            ))}
+          </div>
         )}
 
-        {/* Tags: areas + modalities */}
-        <div className="flex flex-wrap gap-1.5">
-          {p.areas.slice(0, 2).map((a) => (
-            <span
-              key={a.id}
-              className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700"
-            >
-              {a.nome}
-            </span>
-          ))}
-          {p.modalities.slice(0, 2).map((m) => (
-            <span
-              key={m}
-              className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600"
-            >
-              {m.toLowerCase().includes('online') ? (
-                <Wifi className="size-2.5" aria-hidden />
-              ) : (
-                <WifiOff className="size-2.5" aria-hidden />
-              )}
-              {formatEnum(m)}
-            </span>
-          ))}
-        </div>
+        {/* Bio */}
+        {p.bio && (
+          <p className="line-clamp-2 text-xs leading-relaxed text-slate-500">{p.bio}</p>
+        )}
 
-        {/* Footer: rating + price */}
-        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
-          <span className="flex items-center gap-1 text-xs">
-            {p.averageRating != null ? (
-              <>
-                <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden />
-                <span className="font-semibold text-slate-800">{p.averageRating.toFixed(1)}</span>
-                <span className="text-slate-400">({p.totalReviews})</span>
-              </>
-            ) : (
-              <span className="text-slate-400 text-[11px]">Sem avaliações</span>
-            )}
-          </span>
-          <span className="text-sm font-bold text-slate-900">
-            {formatMoney(p.sessionPrice.min, p.sessionPrice.max, p.sessionPrice.currency)}
-          </span>
-        </div>
+        {/* Price */}
+        <p className="mt-auto text-sm font-bold text-slate-900">
+          {formatMoney(p.sessionPrice.min, p.sessionPrice.max, p.sessionPrice.currency)}
+          <span className="ml-1 text-xs font-normal text-slate-400">/sessão</span>
+        </p>
       </div>
     </li>
   );
@@ -211,13 +210,15 @@ function ProfessionalCard({
 export function DiscoverClient() {
   const [query, setQuery] = useState('');
   const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [modality, setModality] = useState<ModalityFilter>(null);
+  const [showModalityMenu, setShowModalityMenu] = useState(false);
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
-  const [radiusKm, setRadiusKm] = useState(50);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [geoHint, setGeoHint] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -229,6 +230,18 @@ export function DiscoverClient() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalityMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close modality menu when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (modalityMenuRef.current && !modalityMenuRef.current.contains(e.target as Node)) {
+        setShowModalityMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -240,22 +253,39 @@ export function DiscoverClient() {
     } catch { /* ignore */ }
   }, []);
 
-  const runSearch = useCallback(async (overrideQuery?: string, isInitial?: boolean) => {
+  const runSearch = useCallback(async (
+    overrideQuery?: string,
+    isInitial?: boolean,
+    overrideLocation?: { city?: string; state?: string; lat?: number | null; lng?: number | null },
+    overrideModality?: ModalityFilter,
+  ) => {
     setError(null);
     if (!isInitial) setLoading(true);
     const q = overrideQuery !== undefined ? overrideQuery : query;
+    const effectiveCity = overrideLocation?.city !== undefined ? overrideLocation.city : city;
+    const effectiveState = overrideLocation?.state !== undefined ? overrideLocation.state : state;
+    const effectiveLat = overrideLocation?.lat !== undefined ? overrideLocation.lat : lat;
+    const effectiveLng = overrideLocation?.lng !== undefined ? overrideLocation.lng : lng;
+    const effectiveModality = overrideModality !== undefined ? overrideModality : modality;
+
+    // Build query string: append modality keyword so AI/search understands it
+    let searchQuery = q;
+    if (effectiveModality === 'ONLINE') searchQuery = `${q} online`.trim();
+    else if (effectiveModality === 'IN_PERSON') searchQuery = `${q} presencial`.trim();
+    else if (effectiveModality === 'HYBRID') searchQuery = `${q} híbrido`.trim();
+
     try {
       const res = await fetch('/api/professionals/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
-          query: q,
-          city: city.trim() || undefined,
-          state: state.trim().toUpperCase().slice(0, 2) || undefined,
-          lat: lat ?? undefined,
-          lng: lng ?? undefined,
-          radiusKm,
+          query: searchQuery,
+          city: effectiveCity.trim() || undefined,
+          state: effectiveState.trim().toUpperCase().slice(0, 2) || undefined,
+          lat: effectiveLat ?? undefined,
+          lng: effectiveLng ?? undefined,
+          radiusKm: 50,
           page: 1,
           limit: 24,
         }),
@@ -278,34 +308,15 @@ export function DiscoverClient() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [query, city, state, lat, lng, radiusKm]);
+  }, [query, city, state, lat, lng, modality]);
 
-  // Auto-load all professionals on mount
   useEffect(() => {
     void Promise.all([loadFavorites(), runSearch('', true)]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const useMyLocation = () => {
-    setGeoHint(null);
-    if (!navigator.geolocation) {
-      setGeoHint('Geolocalização não disponível neste navegador.');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
-        setGeoHint('Localização aplicada ao raio de busca.');
-      },
-      () => setGeoHint('Não foi possível obter localização. Informe cidade e UF.'),
-      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 12_000 },
-    );
-  };
-
   const handleChip = (value: string) => {
     if (activeChip === value) {
-      // Deselect chip → show all
       setActiveChip(null);
       setQuery('');
       void runSearch('');
@@ -317,15 +328,52 @@ export function DiscoverClient() {
   };
 
   const handleSearch = () => {
-    setActiveChip(null);
+    setLocationError(null);
+    if (needsLocation(modality) && !city.trim() && lat == null) {
+      setLocationError('Informe a cidade ou use a sua localização para buscar aulas presenciais.');
+      return;
+    }
     void runSearch();
   };
 
-  const clearSearch = () => {
-    setQuery('');
-    setActiveChip(null);
-    void runSearch('');
-    inputRef.current?.focus();
+  const useMyLocation = () => {
+    setGeoHint(null);
+    setLocationError(null);
+    if (!navigator.geolocation) {
+      setGeoHint('Geolocalização não disponível neste navegador.');
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setLat(latitude);
+        setLng(longitude);
+        setGeoHint('Obtendo cidade...');
+
+        let geoCity = city;
+        let geoState = state;
+        try {
+          const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lng=${longitude}`);
+          const data: { city?: string; state?: string } = await res.json().catch(() => ({}));
+          if (res.ok && data.city) {
+            geoCity = data.city;
+            geoState = data.state ?? geoState;
+            setCity(geoCity);
+            setState(geoState);
+          }
+        } catch { /* fallback */ }
+
+        setGeoLoading(false);
+        setGeoHint(`${geoCity || 'Localização obtida'}${geoState ? `, ${geoState}` : ''}`);
+        void runSearch(undefined, false, { city: geoCity, state: geoState, lat: latitude, lng: longitude });
+      },
+      () => {
+        setGeoLoading(false);
+        setGeoHint('Não foi possível obter a localização. Informe a cidade manualmente.');
+      },
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 12_000 },
+    );
   };
 
   const toggleFavorite = async (professionalId: string) => {
@@ -347,175 +395,188 @@ export function DiscoverClient() {
     } catch { /* ignore */ }
   };
 
-  const showSkeletons = initialLoading;
-  const showResults = !initialLoading && (items.length > 0 || hasSearched);
+  const selectedModality = MODALITY_OPTIONS.find((o) => o.value === modality);
+  const showLocation = needsLocation(modality);
 
   return (
     <main className="flex min-h-screen flex-col bg-slate-50">
 
-      {/* ===== Hero search section ===== */}
-      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 px-4 py-12 text-center sm:px-6 sm:py-16">
+      {/* ── Hero / Search ─────────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 px-4 py-14 text-center sm:px-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
           Encontre o professor perfeito
         </h1>
         <p className="mx-auto mt-3 max-w-lg text-base text-emerald-100">
-          Busque por especialidade, objetivo ou localização e comece a treinar.
+          Escolha a modalidade, informe sua especialidade e comece agora.
         </p>
 
-        {/* Search bar */}
+        {/* Main search bar */}
         <div className="mx-auto mt-8 max-w-2xl">
-          <div className="flex overflow-hidden rounded-2xl bg-white shadow-xl shadow-black/20">
-            <div className="relative flex flex-1 items-center gap-3 px-4">
-              <Sparkles className="size-4 shrink-0 text-violet-500" aria-hidden />
+          {/* overflow-visible so the modality dropdown is not clipped */}
+          <div className="flex rounded-2xl bg-white shadow-xl shadow-black/20">
+            {/* Specialty input */}
+            <div className="relative flex flex-1 items-center gap-3 rounded-l-2xl border-r border-slate-100 px-4">
+              <Search className="size-4 shrink-0 text-slate-400" aria-hidden />
               <input
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setActiveChip(null); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Personal trainer, pilates online, yoga em SP…"
+                placeholder="Ex.: Personal trainer, pilates, yoga…"
                 className="flex-1 py-4 text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                aria-label="O que procura?"
+                aria-label="Especialidade"
               />
               {query && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="shrink-0 text-slate-300 hover:text-slate-500"
-                  aria-label="Limpar busca"
-                >
+                <button type="button" onClick={() => { setQuery(''); setActiveChip(null); }} className="shrink-0 text-slate-300 hover:text-slate-500">
                   <X className="size-4" aria-hidden />
                 </button>
               )}
             </div>
+
+            {/* Modality picker */}
+            <div className="relative" ref={modalityMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowModalityMenu((v) => !v)}
+                className="flex h-full items-center gap-2 border-r border-slate-100 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                aria-haspopup="listbox"
+                aria-expanded={showModalityMenu}
+              >
+                {selectedModality ? (
+                  <>
+                    <selectedModality.icon className="size-4 shrink-0 text-emerald-600" aria-hidden />
+                    <span className="hidden sm:inline">{selectedModality.label}</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="size-4 shrink-0 text-slate-400" aria-hidden />
+                    <span className="hidden sm:inline text-slate-400">Tipo de aula</span>
+                  </>
+                )}
+                <ChevronDown className={`size-3.5 text-slate-400 transition-transform ${showModalityMenu ? 'rotate-180' : ''}`} aria-hidden />
+              </button>
+
+              {showModalityMenu && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-lg">
+                  {/* Clear option */}
+                  {modality && (
+                    <button
+                      type="button"
+                      onClick={() => { setModality(null); setShowModalityMenu(false); }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-slate-400 hover:bg-slate-50"
+                    >
+                      <X className="size-3.5" aria-hidden />
+                      Qualquer modalidade
+                    </button>
+                  )}
+                  {MODALITY_OPTIONS.map((opt) => {
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="option"
+                        aria-selected={modality === opt.value}
+                        onClick={() => { setModality(opt.value); setShowModalityMenu(false); setLocationError(null); }}
+                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${modality === opt.value ? 'bg-emerald-50' : ''}`}
+                      >
+                        <Icon className={`mt-0.5 size-4 shrink-0 ${modality === opt.value ? 'text-emerald-600' : 'text-slate-400'}`} aria-hidden />
+                        <div>
+                          <p className={`text-sm font-semibold ${modality === opt.value ? 'text-emerald-700' : 'text-slate-700'}`}>{opt.label}</p>
+                          <p className="text-[11px] text-slate-400">{opt.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Search button */}
             <button
               type="button"
               disabled={loading}
               onClick={handleSearch}
-              className="flex shrink-0 items-center gap-2 bg-emerald-600 px-6 py-4 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              className="flex shrink-0 items-center gap-2 rounded-r-2xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Search className="size-4" aria-hidden />
-              )}
+              {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Search className="size-4" aria-hidden />}
               <span className="hidden sm:inline">Buscar</span>
             </button>
           </div>
-        </div>
 
-        {/* Specialty chips */}
-        <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-2">
-          {SPECIALTY_CHIPS.map((chip) => {
-            const Icon = chip.icon;
-            const isActive = activeChip === chip.value;
-            return (
-              <button
-                key={chip.value}
-                type="button"
-                onClick={() => handleChip(chip.value)}
-                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-                  isActive
-                    ? 'border-white bg-white text-emerald-700 shadow'
-                    : 'border-white/30 bg-white/10 text-white hover:bg-white/20'
-                }`}
-              >
-                <Icon className="size-3" aria-hidden />
-                {chip.label}
-              </button>
-            );
-          })}
+          {/* Location row — only for presencial/híbrido */}
+          {showLocation && (
+            <div className="mt-3 overflow-hidden rounded-2xl bg-white/95 px-4 py-3 shadow-lg shadow-black/10">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
+                  <MapPin className="size-4 shrink-0 text-slate-400" aria-hidden />
+                  <input
+                    value={city}
+                    onChange={(e) => { setCity(e.target.value); setLocationError(null); }}
+                    placeholder="Cidade"
+                    className="flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  />
+                  <input
+                    value={state}
+                    onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
+                    placeholder="UF"
+                    maxLength={2}
+                    className="w-10 bg-transparent text-center text-sm uppercase text-slate-900 outline-none placeholder:text-slate-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={useMyLocation}
+                  disabled={geoLoading}
+                  className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {geoLoading
+                    ? <Loader2 className="size-4 animate-spin text-emerald-600" aria-hidden />
+                    : <Navigation className="size-4 text-emerald-600" aria-hidden />
+                  }
+                  {geoLoading ? 'Localizando…' : 'Usar minha localização'}
+                </button>
+              </div>
+              {locationError && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-600">
+                  <X className="size-3.5" aria-hidden /> {locationError}
+                </p>
+              )}
+              {geoHint && !locationError && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600">
+                  <Navigation className="size-3" aria-hidden /> {geoHint}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Specialty chips */}
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {SPECIALTY_CHIPS.map((chip) => {
+              const Icon = chip.icon;
+              const isActive = activeChip === chip.value;
+              return (
+                <button
+                  key={chip.value}
+                  type="button"
+                  onClick={() => handleChip(chip.value)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                    isActive
+                      ? 'border-white bg-white text-emerald-700 shadow'
+                      : 'border-white/30 bg-white/10 text-white hover:bg-white/20'
+                  }`}
+                >
+                  <Icon className="size-3" aria-hidden />
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ===== Content area ===== */}
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-
-        {/* Filters + AI link row */}
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${showFilters ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
-              aria-pressed={showFilters}
-            >
-              <SlidersHorizontal className="size-4" aria-hidden />
-              Filtros
-            </button>
-
-            {!initialLoading && total > 0 && (
-              <p className="text-sm text-slate-500">
-                <strong className="text-slate-900">{total}</strong>{' '}
-                profissional{total !== 1 ? 'is' : ''} encontrado{total !== 1 ? 's' : ''}
-                {activeChip && (
-                  <span className="ml-1.5 text-emerald-600">· {activeChip}</span>
-                )}
-              </p>
-            )}
-          </div>
-
-          <Link
-            href="/recomendacoes"
-            className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
-          >
-            <Sparkles className="size-3.5" aria-hidden />
-            Ranking por IA
-          </Link>
-        </div>
-
-        {/* Expandable filters */}
-        {showFilters && (
-          <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-semibold text-slate-700">Cidade</span>
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Ex.: São Paulo"
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-semibold text-slate-700">Estado (UF)</span>
-                <input
-                  value={state}
-                  onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
-                  placeholder="SP"
-                  maxLength={2}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm uppercase text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-semibold text-slate-700">Raio (km)</span>
-                <input
-                  type="number"
-                  min={5}
-                  max={200}
-                  value={radiusKm}
-                  onChange={(e) => setRadiusKm(Number(e.target.value) || 50)}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                />
-              </label>
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={useMyLocation}
-                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                <Navigation className="size-4" aria-hidden />
-                Usar minha localização
-              </button>
-              {lat != null && lng != null && (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                  ✓ Localização ativa
-                </span>
-              )}
-            </div>
-            {geoHint && <p className="mt-2 text-xs text-slate-500">{geoHint}</p>}
-          </div>
-        )}
+      {/* ── Results ───────────────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
 
         {/* AI interpretation */}
         {interpreted?.summary && (
@@ -530,26 +591,43 @@ export function DiscoverClient() {
 
         {/* Error */}
         {error && (
-          <div
-            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="alert"
-          >
+          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
             {error}
           </div>
         )}
 
-        {/* ===== Skeletons while loading ===== */}
-        {showSkeletons && (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
+        {/* Results header */}
+        {!initialLoading && hasSearched && total > 0 && (
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              <strong className="text-slate-900">{total}</strong>{' '}
+              professor{total !== 1 ? 'es' : ''} encontrado{total !== 1 ? 's' : ''}
+              {modality && selectedModality && (
+                <span className="ml-1.5 inline-flex items-center gap-1 text-emerald-600 font-medium">
+                  · <selectedModality.icon className="size-3.5" aria-hidden />{selectedModality.label}
+                </span>
+              )}
+            </p>
+            <Link
+              href="/recomendacoes"
+              className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+            >
+              <Sparkles className="size-3.5" aria-hidden />
+              Ranking por IA
+            </Link>
+          </div>
+        )}
+
+        {/* Skeletons */}
+        {initialLoading && (
+          <ul className="flex flex-col gap-3">
+            {Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)}
           </ul>
         )}
 
-        {/* ===== Results grid ===== */}
-        {!showSkeletons && items.length > 0 && (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Cards */}
+        {!initialLoading && items.length > 0 && (
+          <ul className="flex flex-col gap-3">
             {items.map((p, idx) => (
               <ProfessionalCard
                 key={p.id}
@@ -562,30 +640,32 @@ export function DiscoverClient() {
           </ul>
         )}
 
-        {/* ===== Empty state ===== */}
-        {!showSkeletons && items.length === 0 && hasSearched && (
+        {/* Empty state */}
+        {!initialLoading && items.length === 0 && hasSearched && (
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
               <Search className="size-8" aria-hidden />
             </div>
             <div>
-              <p className="font-extrabold text-slate-900">Nenhum resultado</p>
+              <p className="font-extrabold text-slate-900">Nenhum professor encontrado</p>
               <p className="mt-1 max-w-xs text-sm text-slate-500">
-                Tente ampliar o raio de busca, mudar a cidade ou usar uma descrição diferente.
+                {showLocation
+                  ? 'Tente ampliar a cidade ou mudar a modalidade para Online.'
+                  : 'Tente mudar a especialidade ou escolher outra modalidade.'}
               </p>
             </div>
             <button
               type="button"
-              onClick={clearSearch}
-              className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              onClick={() => { setQuery(''); setModality(null); setCity(''); setState(''); void runSearch('', false, { city: '', state: '', lat: null, lng: null }, null); }}
+              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               Ver todos os professores
             </button>
           </div>
         )}
 
-        {/* ===== AI recommendation CTA ===== */}
-        {!showSkeletons && (
+        {/* AI upsell */}
+        {!initialLoading && (
           <div className="mt-10 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 to-indigo-50 p-6 text-center">
             <Sparkles className="mx-auto mb-2 size-6 text-violet-500" aria-hidden />
             <p className="font-bold text-violet-900">Quer uma lista personalizada para você?</p>

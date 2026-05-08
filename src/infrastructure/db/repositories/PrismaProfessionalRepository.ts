@@ -128,6 +128,9 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
           ? { locationCity: { contains: filters.city, mode: 'insensitive' as const } }
           : { locationCity: filters.city })),
       ...(filters.state && { locationState: { equals: filters.state, mode: 'insensitive' as const } }),
+      ...(filters.nameQuery && {
+        user: { name: { contains: filters.nameQuery, mode: 'insensitive' as const } },
+      }),
       ...(filters.isVerified !== undefined && { isVerified: filters.isVerified }),
       ...(filters.isAcceptingClients !== undefined && { isAcceptingClients: filters.isAcceptingClients }),
       ...(filters.maxPriceInCents && { priceMin: { lte: filters.maxPriceInCents } }),

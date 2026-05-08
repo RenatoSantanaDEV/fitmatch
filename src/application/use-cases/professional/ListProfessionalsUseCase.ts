@@ -13,6 +13,7 @@ export class ListProfessionalsUseCase {
       city: dto.city,
       cityInsensitive: dto.cityInsensitive,
       state: dto.state,
+      nameQuery: dto.nameQuery,
       specializations: dto.specializations,
       modalities: dto.modalities,
       maxPriceInCents: dto.maxPriceInCents,
@@ -24,14 +25,15 @@ export class ListProfessionalsUseCase {
       limit: dto.limit ?? 20,
     });
 
-    const names = await this.userRepo.findNamesByIds(result.data.map((p) => p.userId));
+    const profiles = await this.userRepo.findNamesByIds(result.data.map((p) => p.userId));
 
     return {
       ...result,
       data: result.data.map((p) => ({
         id: p.id,
         userId: p.userId,
-        displayName: names.get(p.userId) ?? 'Educador',
+        displayName: profiles.get(p.userId)?.name ?? 'Educador',
+        avatarUrl: profiles.get(p.userId)?.avatarUrl ?? null,
         bio: p.bio,
         areas: p.areas,
         location: p.location,
