@@ -14,16 +14,17 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData().catch(() => null);
   const file = formData?.get('photo');
 
-  if (!(file instanceof File)) {
+  if (!(file instanceof Blob)) {
     return NextResponse.json({ error: 'Envie um arquivo de imagem.' }, { status: 400 });
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  const fileBlob = file as Blob & { name?: string };
+  if (!ALLOWED_TYPES.includes(fileBlob.type)) {
     return NextResponse.json(
       { error: 'Formato inválido. Use JPEG, PNG ou WebP.' },
       { status: 400 },
     );
   }
-  if (file.size > MAX_BYTES) {
+  if (fileBlob.size > MAX_BYTES) {
     return NextResponse.json({ error: 'A foto deve ter no máximo 5 MB.' }, { status: 400 });
   }
 
@@ -31,9 +32,10 @@ export async function POST(req: NextRequest) {
     const user = await userRepo.findById(session.user.id);
     const oldUrl = user?.avatarUrl;
 
-    const blob = await put(`avatars/${session.user.id}/${Date.now()}-${file.name}`, file, {
+    const filename = fileBlob.name ?? 'photo';
+    const blob = await put(`avatars/${session.user.id}/${Date.now()}-${filename}`, fileBlob, {
       access: 'private',
-      contentType: file.type,
+      contentType: fileBlob.type,
     });
 
     await userRepo.update(session.user.id, { avatarUrl: blob.url });

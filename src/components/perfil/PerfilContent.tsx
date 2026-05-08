@@ -16,6 +16,7 @@ const sectionCardClass =
 
 const PROFILE_TABS = [
   { id: 'conta' as const, label: 'Conta' },
+  { id: 'objetivos' as const, label: 'Objetivos' },
   { id: 'localizacao' as const, label: 'Localização' },
   { id: 'documentos' as const, label: 'Documentos' },
   { id: 'recomendacoes' as const, label: 'Recomendações' },
@@ -113,6 +114,72 @@ export function PerfilContent({
   const [confirmPwd, setConfirmPwd] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // ── Objetivos: fitness profile ────────────────────────────────────────────
+  type FitnessData = { fitnessGoals: string[]; experienceLevel: string; preferredModality: string };
+  const [fitness, setFitness] = useState<FitnessData>({
+    fitnessGoals: [],
+    experienceLevel: '',
+    preferredModality: '',
+  });
+  const [fitnessInitial, setFitnessInitial] = useState<FitnessData | null>(null);
+  const [fitnessLoading, setFitnessLoading] = useState(false);
+  const [fitnessFetched, setFitnessFetched] = useState(false);
+  const [fitnessMsg, setFitnessMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const fitnessDirty =
+    fitnessInitial !== null &&
+    (JSON.stringify(fitness.fitnessGoals.sort()) !== JSON.stringify([...fitnessInitial.fitnessGoals].sort()) ||
+      fitness.experienceLevel !== fitnessInitial.experienceLevel ||
+      fitness.preferredModality !== fitnessInitial.preferredModality);
+
+  useEffect(() => {
+    if (tab !== 'objetivos' || fitnessFetched) return;
+    void (async () => {
+      try {
+        const res = await fetch('/api/profile/student', { credentials: 'same-origin' });
+        if (res.ok) {
+          const data = (await res.json()) as FitnessData | null;
+          if (data) {
+            setFitness(data);
+            setFitnessInitial(data);
+          } else {
+            setFitnessInitial({ fitnessGoals: [], experienceLevel: '', preferredModality: '' });
+          }
+        }
+      } catch { /* ignore */ } finally {
+        setFitnessFetched(true);
+      }
+    })();
+  }, [tab, fitnessFetched]);
+
+  const onSaveFitness = useCallback(async () => {
+    if (!fitnessDirty) return;
+    setFitnessLoading(true);
+    setFitnessMsg(null);
+    const patch: Record<string, unknown> = {};
+    if (fitness.fitnessGoals.length > 0) patch.fitnessGoals = fitness.fitnessGoals;
+    if (fitness.experienceLevel) patch.experienceLevel = fitness.experienceLevel;
+    if (fitness.preferredModality) patch.preferredModality = fitness.preferredModality;
+    try {
+      const res = await fetch('/api/profile/student', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (res.status === 204) {
+        setFitnessInitial({ ...fitness });
+        setFitnessMsg({ type: 'ok', text: 'Perfil de treino salvo com sucesso.' });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFitnessMsg({ type: 'err', text: readApiError(data) });
+      }
+    } catch {
+      setFitnessMsg({ type: 'err', text: 'Não foi possível salvar.' });
+    } finally {
+      setFitnessLoading(false);
+    }
+  }, [fitnessDirty, fitness]);
 
   // ── Tab sync via hash ─────────────────────────────────────────────────────
   useLayoutEffect(() => {
@@ -454,6 +521,118 @@ export function PerfilContent({
           </section>
         </div>
 
+        {/* ── OBJETIVOS ───────────────────────────────────────────────────── */}
+        <div
+          id="perfil-panel-objetivos"
+          role="tabpanel"
+          aria-labelledby="perfil-tab-objetivos"
+          hidden={tab !== 'objetivos'}
+          className="space-y-8"
+        >
+          <section className={sectionCardClass}>
+            <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
+              <h2 className="text-lg font-semibold text-slate-900">Perfil de treino</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Preencha uma vez e a análise de compatibilidade com professores será pré-preenchida automaticamente.
+              </p>
+            </div>
+            <div className="space-y-8 px-5 py-6 sm:px-8 sm:py-7">
+              <StatusBanner msg={fitnessMsg} />
+
+              {/* Goals — multi-select */}
+              <div>
+                <label className={labelClass}>Objetivos de treino</label>
+                <p className="mb-3 text-xs text-slate-500">Selecione um ou mais objetivos.</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'emagrecimento', label: '🔥 Emagrecimento' },
+                    { id: 'hipertrofia', label: '💪 Hipertrofia' },
+                    { id: 'condicionamento', label: '⚡ Condicionamento' },
+                    { id: 'reabilitacao', label: '🏥 Reabilitação' },
+                    { id: 'funcional', label: '🎯 Funcional' },
+                    { id: 'performance', label: '🏆 Performance' },
+                    { id: 'saude_mental', label: '🧘 Saúde Mental' },
+                  ].map((g) => {
+                    const selected = fitness.fitnessGoals.includes(g.id);
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() =>
+                          setFitness((f) => ({
+                            ...f,
+                            fitnessGoals: selected
+                              ? f.fitnessGoals.filter((x) => x !== g.id)
+                              : [...f.fitnessGoals, g.id],
+                          }))
+                        }
+                        className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                          selected
+                            ? 'border-blue-500 bg-blue-500 text-white shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Experience level */}
+              <div>
+                <label className={labelClass}>Nível atual</label>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-3">
+                  {[
+                    { id: 'BEGINNER', label: 'Iniciante', desc: 'Estou começando agora' },
+                    { id: 'INTERMEDIATE', label: 'Intermediário', desc: 'Já treino há algum tempo' },
+                    { id: 'ADVANCED', label: 'Avançado', desc: 'Treino regularmente' },
+                  ].map((l) => (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => setFitness((f) => ({ ...f, experienceLevel: l.id }))}
+                      className={`flex flex-1 flex-col rounded-xl border p-3 text-left transition-all sm:p-4 ${
+                        fitness.experienceLevel === l.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-sm font-semibold text-slate-900">{l.label}</span>
+                      <span className="mt-0.5 text-xs text-slate-500">{l.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preferred modality */}
+              <div>
+                <label className={labelClass}>Modalidade preferida</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[
+                    { id: 'IN_PERSON', label: '📍 Presencial' },
+                    { id: 'ONLINE', label: '📱 Online' },
+                    { id: 'HYBRID', label: '🔄 Híbrido' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setFitness((f) => ({ ...f, preferredModality: m.id }))}
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                        fitness.preferredModality === m.id
+                          ? 'border-blue-500 bg-blue-500 text-white shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
         {/* ── LOCALIZAÇÃO ─────────────────────────────────────────────────── */}
         <div
           id="perfil-panel-localizacao"
@@ -577,17 +756,23 @@ export function PerfilContent({
         </div>
       </div>
 
-      {/* ── Floating save — só aparece na aba Conta ─────────────────────────── */}
-      {tab === 'conta' && (
+      {/* ── Floating save — aparece nas abas Conta e Objetivos ──────────────── */}
+      {(tab === 'conta' || tab === 'objetivos') && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
           <button
             type="button"
-            onClick={() => void onSaveAccount()}
-            disabled={accountLoading || !accountDirty}
+            onClick={() => void (tab === 'conta' ? onSaveAccount() : onSaveFitness())}
+            disabled={
+              tab === 'conta'
+                ? accountLoading || !accountDirty
+                : fitnessLoading || !fitnessDirty
+            }
             className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-600 px-10 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/40 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {accountLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            {accountDirty ? 'Salvar alterações' : 'Sem alterações'}
+            {(tab === 'conta' ? accountLoading : fitnessLoading) ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : null}
+            {(tab === 'conta' ? accountDirty : fitnessDirty) ? 'Salvar alterações' : 'Sem alterações'}
           </button>
         </div>
       )}

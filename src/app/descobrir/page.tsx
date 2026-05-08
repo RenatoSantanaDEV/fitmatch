@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '../../lib/auth';
 import { DiscoverClient } from './DiscoverClient';
+import { DiscoverPageSpinner } from './loading';
 
 export default async function DescobrirPage() {
   const session = await auth();
@@ -19,7 +21,9 @@ export default async function DescobrirPage() {
           </Link>
         </div>
       </noscript>
-      <DiscoverClient />
+      <Suspense fallback={<DiscoverPageSpinner />}>
+        <DiscoverClient />
+      </Suspense>
     </>
   );
 }
