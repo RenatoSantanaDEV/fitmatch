@@ -38,6 +38,15 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
     return raw ? ProfessionalMapper.toDomain(raw) : null;
   }
 
+  async findByIds(ids: string[]): Promise<Professional[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.professional.findMany({
+      where: { id: { in: ids } },
+      include: areasInclude,
+    });
+    return rows.map(ProfessionalMapper.toDomain);
+  }
+
   async findByUserId(userId: string): Promise<Professional | null> {
     const raw = await this.prisma.professional.findUnique({
       where: { userId },

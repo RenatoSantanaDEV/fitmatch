@@ -125,7 +125,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               <>
                 <OpenAuthModal
                   mode="register"
-                  callbackUrl="/recomendacoes"
+                  callbackUrl="/descobrir"
                   className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-[1.03] hover:bg-emerald-400 active:scale-[0.98]"
                 >
                   Começar grátis
@@ -133,7 +133,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </OpenAuthModal>
                 <OpenAuthModal
                   mode="login"
-                  callbackUrl="/recomendacoes"
+                  callbackUrl="/descobrir"
                   className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:scale-[1.02] hover:bg-white/20"
                 >
                   Já tenho conta
@@ -180,7 +180,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               {/* Student */}
               <OpenAuthModal
                 mode="login"
-                callbackUrl="/recomendacoes"
+                callbackUrl="/descobrir"
                 className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-emerald-100 bg-white p-8 text-left shadow-sm transition-all hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1"
               >
                 <div
@@ -409,11 +409,11 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 ))}
               </ul>
               {isAuthenticated ? (
-                <Link href="/recomendacoes" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-violet-600 transition-all hover:gap-3">
-                  Ver meu ranking <ArrowRight className="size-4" aria-hidden />
+                <Link href="/descobrir" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-violet-600 transition-all hover:gap-3">
+                  Descobrir profissionais <ArrowRight className="size-4" aria-hidden />
                 </Link>
               ) : (
-                <OpenAuthModal mode="register" callbackUrl="/recomendacoes" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-violet-600 transition-all hover:gap-3">
+                <OpenAuthModal mode="register" callbackUrl="/descobrir" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-violet-600 transition-all hover:gap-3">
                   Gerar meu ranking <ArrowRight className="size-4" aria-hidden />
                 </OpenAuthModal>
               )}
@@ -480,7 +480,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             <div className="mt-14 text-center">
               <OpenAuthModal
                 mode="register"
-                callbackUrl="/recomendacoes"
+                callbackUrl="/descobrir"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-500 px-9 py-4 text-sm font-bold text-white shadow-2xl shadow-emerald-500/25 transition-all hover:scale-[1.03] hover:bg-emerald-400 active:scale-[0.98]"
               >
                 Criar conta grátis — é rápido
@@ -514,8 +514,8 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   Buscar professores
                   <ArrowRight className="size-4" aria-hidden />
                 </Link>
-                <Link href="/recomendacoes" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:scale-[1.02] hover:bg-white/20">
-                  Ver recomendações IA
+                <Link href="/descobrir" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:scale-[1.02] hover:bg-white/20">
+                  Descobrir professores
                 </Link>
               </div>
           </div>

@@ -9,6 +9,7 @@ export const searchProfessionalsBodySchema = z.object({
   radiusKm: z.number().finite().min(1).max(500).optional().default(50),
   page: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(50).optional(),
+  showAll: z.boolean().optional().default(false),
 });
 
 export type SearchProfessionalsBody = z.infer<typeof searchProfessionalsBodySchema>;

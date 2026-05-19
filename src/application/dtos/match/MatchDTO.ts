@@ -21,6 +21,7 @@ export interface MatchResponseDTO {
 export interface MatchWithProfessionalDTO extends MatchResponseDTO {
   professional: {
     id: string;
+    userId: string;
     name: string;
     bio: string;
     areas: AreaAtuacao[];

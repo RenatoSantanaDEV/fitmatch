@@ -1,7 +1,12 @@
 import { type NextRequest } from 'next/server';
 import { auth } from '../../../../lib/auth';
 import { getPrismaClient } from '../../../../infrastructure/db/prisma/client';
-import { ok, unauthorized, badRequest, handleError } from '../../../../lib/apiResponse';
+import { ok, unauthorized, badRequest, tooManyRequests, handleError } from '../../../../lib/apiResponse';
+import { checkRateLimit } from '../../../../lib/rateLimit';
+
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const RATE_KEY_PREFIX = 'compat';
 
 export interface StudentCompatibilityForm {
   mainGoal: string;
@@ -54,6 +59,17 @@ export async function POST(
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
 
+  const rateLimit = checkRateLimit(`${RATE_KEY_PREFIX}:${session.user.id}`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!rateLimit.ok) {
+    return tooManyRequests(
+      rateLimit.retryAfter,
+      `Limite de análises atingido. Tente novamente em ${Math.ceil(rateLimit.retryAfter / 60)} minuto(s).`,
+    );
+  }
+
+  const apiKey = process.env.AI_API_KEY;
+  if (!apiKey) return badRequest('Serviço de IA indisponível.');
+
   const { professionalId } = await params;
 
   let body: StudentCompatibilityForm;
@@ -69,6 +85,8 @@ export async function POST(
 
   try {
     const prisma = getPrismaClient();
+    const baseUrl = (process.env.AI_API_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
+    const model = process.env.AI_MODEL ?? 'gpt-4o-mini';
 
     const professional = await prisma.professional.findUnique({
       where: { id: professionalId },
@@ -79,14 +97,6 @@ export async function POST(
     });
 
     if (!professional) return badRequest('Profissional não encontrado.');
-
-    const apiKey = process.env.AI_API_KEY;
-    const baseUrl = (process.env.AI_API_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
-    const model = process.env.AI_MODEL ?? 'gpt-4o-mini';
-
-    if (!apiKey) {
-      return badRequest('Serviço de IA indisponível.');
-    }
 
     const userMessage = JSON.stringify({
       aluno: {
@@ -165,8 +175,8 @@ export async function POST(
     const content = aiData.choices?.[0]?.message?.content;
     if (!content) return badRequest('IA não retornou conteúdo.');
 
-    const result = JSON.parse(content) as CompatibilityResult;
-    return ok(result);
+    const parsed = JSON.parse(content) as CompatibilityResult;
+    return ok({ ...parsed, score: Math.min(100, Math.max(0, Math.round(parsed.score))) });
   } catch (err) {
     return handleError(err);
   }

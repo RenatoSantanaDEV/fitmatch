@@ -725,10 +725,10 @@ export function PerfilContent({
                   </div>
                 </div>
                 <Link
-                  href="/recomendacoes"
+                  href="/descobrir"
                   className="inline-flex shrink-0 items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
                 >
-                  Ver recomendações
+                  Descobrir profissionais
                 </Link>
               </div>
             </div>

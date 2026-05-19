@@ -187,6 +187,7 @@ export function ProfilePageClient({
 }) {
   const [isFav, setIsFav] = useState(initialFavorited);
   const [favLoading, setFavLoading] = useState(false);
+  const [compatOpen, setCompatOpen] = useState(false);
 
   const initials = getInitials(data.displayName);
   const priceLabel = formatMoney(
@@ -412,6 +413,8 @@ export function ProfilePageClient({
               professionalId={data.id}
               professionalName={data.displayName}
               isOwnProfile={isOwnProfile}
+              forceOpen={compatOpen}
+              onClose={() => setCompatOpen(false)}
             />
 
             {data.areas.length > 0 && (
@@ -628,12 +631,22 @@ export function ProfilePageClient({
                   Editar meu perfil
                 </Link>
               ) : (
-                <Link
-                  href="/recomendacoes"
-                  className="block w-full rounded-full bg-emerald-600 px-4 py-3.5 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
-                >
-                  Entrar em contato
-                </Link>
+                <>
+                  <Link
+                    href="/descobrir"
+                    className="block w-full rounded-full bg-emerald-600 px-4 py-3.5 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
+                  >
+                    Entrar em contato
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setCompatOpen(true)}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 transition hover:bg-violet-100"
+                  >
+                    <Sparkles className="size-4" aria-hidden />
+                    Verificar compatibilidade
+                  </button>
+                </>
               )}
 
               <div className="mt-5 flex flex-col gap-2.5 border-t border-slate-100 pt-5">
@@ -647,10 +660,12 @@ export function ProfilePageClient({
                   <Shield className="size-4 shrink-0 text-emerald-600" aria-hidden />
                   Pagamento seguro pela plataforma
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                  <Zap className="size-4 shrink-0 text-violet-500" aria-hidden />
-                  Recomendado pela IA FitMatch
-                </div>
+                {isTopPro && (
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
+                    <Zap className="size-4 shrink-0 text-violet-500" aria-hidden />
+                    Recomendado pela IA FitMatch
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -673,11 +688,21 @@ export function ProfilePageClient({
             </Link>
           ) : (
             <Link
-              href="/recomendacoes"
+              href="/descobrir"
               className="flex-1 rounded-full bg-emerald-600 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
             >
               Entrar em contato
             </Link>
+          )}
+          {!isOwnProfile && (
+            <button
+              type="button"
+              onClick={() => setCompatOpen(true)}
+              className="flex size-12 shrink-0 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600 transition hover:bg-violet-100"
+              aria-label="Verificar compatibilidade"
+            >
+              <Sparkles className="size-5" aria-hidden />
+            </button>
           )}
           {!isOwnProfile && (
             <button

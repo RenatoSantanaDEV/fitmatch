@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
   ChevronDown,
@@ -23,6 +22,7 @@ import type { ModalityFilter, SearchLocationOverrides } from './discoverSearchTy
 import { DiscoverCardSkeleton } from './DiscoverCardSkeleton';
 import { DiscoverProfessionalCard } from './DiscoverProfessionalCard';
 import { MODALITY_MENU_OPTIONS, SPECIALTY_CHIP_CONFIGS } from './discoverUiConstants';
+import { SmartMatchModal } from '../profissionais/SmartMatchModal';
 
 const SKELETON_CARD_COUNT = 6;
 const SEARCH_RADIUS_KM = 50;
@@ -31,7 +31,12 @@ const SEARCH_PAGE_SIZE = 24;
 const GEOLOCATION_TIMEOUT_MS = 12_000;
 const GEOLOCATION_MAXIMUM_AGE_MS = 60_000;
 
-export function DiscoverClient() {
+interface DiscoverClientProps {
+  defaultCity?: string;
+  defaultState?: string;
+}
+
+export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProps) {
   const [query, setQuery] = useState('');
   const [activeSpecialtyValue, setActiveSpecialtyValue] = useState<string | null>(
     null,
@@ -39,8 +44,8 @@ export function DiscoverClient() {
   const [modalityFilter, setModalityFilter] = useState<ModalityFilter>(null);
   const [isModalityMenuOpen, setIsModalityMenuOpen] = useState(false);
 
-  const [cityInput, setCityInput] = useState('');
-  const [stateInput, setStateInput] = useState('');
+  const [cityInput, setCityInput] = useState(defaultCity ?? '');
+  const [stateInput, setStateInput] = useState(defaultState ?? '');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
@@ -67,6 +72,12 @@ export function DiscoverClient() {
   const [hasCompletedAtLeastOneSearch, setHasCompletedAtLeastOneSearch] =
     useState(false);
 
+  // Smart match modal
+  const [showModal, setShowModal] = useState(false);
+  const [smartMatchIds, setSmartMatchIds] = useState<string[]>([]);
+  const [searchContext, setSearchContext] = useState('');
+
+  const router = useRouter();
   const specialtySearchInputRef = useRef<HTMLInputElement>(null);
   const modalityMenuContainerRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +94,12 @@ export function DiscoverClient() {
     return () =>
       document.removeEventListener('mousedown', handleDocumentMouseDown);
   }, []);
+
+  function prepareSmartMatch(pros: ProfessionalResponseDTO[], ctx: string) {
+    if (pros.length === 0) return;
+    setSmartMatchIds(pros.map((p) => p.id).slice(0, 20));
+    setSearchContext(ctx);
+  }
 
   const loadFavoriteProfessionalIds = useCallback(async () => {
     try {
@@ -104,7 +121,8 @@ export function DiscoverClient() {
       isInitialLoad?: boolean,
       locationOverrides?: SearchLocationOverrides,
       modalityFilterOverride?: ModalityFilter,
-    ) => {
+      showAll?: boolean,
+    ): Promise<ProfessionalResponseDTO[]> => {
       setSearchErrorMessage(null);
       if (!isInitialLoad) setIsSearchLoading(true);
 
@@ -151,6 +169,7 @@ export function DiscoverClient() {
             radiusKm: SEARCH_RADIUS_KM,
             page: SEARCH_PAGE,
             limit: SEARCH_PAGE_SIZE,
+            showAll: showAll ?? false,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -162,17 +181,20 @@ export function DiscoverClient() {
           );
           setProfessionals([]);
           setInterpretedSearch(null);
-          return;
+          return [];
         }
+        const fetched: ProfessionalResponseDTO[] = Array.isArray(payload.data) ? payload.data : [];
         setInterpretedSearch(payload.interpreted ?? null);
-        setProfessionals(Array.isArray(payload.data) ? payload.data : []);
+        setProfessionals(fetched);
         setTotalMatchCount(
           typeof payload.total === 'number' ? payload.total : 0,
         );
         setHasCompletedAtLeastOneSearch(true);
+        return fetched;
       } catch {
         setSearchErrorMessage('Sem ligação ao servidor.');
         setProfessionals([]);
+        return [];
       } finally {
         setIsSearchLoading(false);
         setIsInitialSearchLoading(false);
@@ -192,10 +214,21 @@ export function DiscoverClient() {
       );
       if (matchingChip) setActiveSpecialtyValue(matchingChip.value);
     }
-    void Promise.all([
-      loadFavoriteProfessionalIds(),
-      runProfessionalSearch(initialQuery, true),
-    ]);
+    void (async () => {
+      const [fetched] = await Promise.all([
+        runProfessionalSearch(initialQuery, true, {
+          city: defaultCity ?? '',
+          state: defaultState ?? '',
+          lat: null,
+          lng: null,
+        }),
+        loadFavoriteProfessionalIds(),
+      ]);
+      if (fetched.length > 0) {
+        const ctx = [initialQuery, defaultCity].filter(Boolean).join(' · ');
+        prepareSmartMatch(fetched, ctx);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -207,7 +240,10 @@ export function DiscoverClient() {
     } else {
       setActiveSpecialtyValue(chipValue);
       setQuery(chipValue);
-      void runProfessionalSearch(chipValue);
+      void (async () => {
+        const fetched = await runProfessionalSearch(chipValue);
+        if (fetched.length > 0) prepareSmartMatch(fetched, chipValue);
+      })();
     }
   }
 
@@ -223,7 +259,15 @@ export function DiscoverClient() {
       );
       return;
     }
-    void runProfessionalSearch();
+    void (async () => {
+      const fetched = await runProfessionalSearch();
+      if (fetched.length > 0) {
+        const ctx = [query, modalityFilter ? modalityFilter.replace('_', ' ') : '', cityInput]
+          .filter(Boolean)
+          .join(' · ');
+        prepareSmartMatch(fetched, ctx);
+      }
+    })();
   }
 
   function handleUseMyLocation() {
@@ -266,12 +310,18 @@ export function DiscoverClient() {
             resolvedState ? `, ${resolvedState}` : ''
           }`,
         );
-        void runProfessionalSearch(undefined, false, {
-          city: resolvedCity,
-          state: resolvedState,
-          lat: coordsLatitude,
-          lng: coordsLongitude,
-        });
+        void (async () => {
+          const fetched = await runProfessionalSearch(undefined, false, {
+            city: resolvedCity,
+            state: resolvedState,
+            lat: coordsLatitude,
+            lng: coordsLongitude,
+          });
+          if (fetched.length > 0) {
+            const ctx = [query, resolvedCity].filter(Boolean).join(' · ');
+            prepareSmartMatch(fetched, ctx);
+          }
+        })();
       },
       () => {
         setIsGeoLoading(false);
@@ -315,6 +365,13 @@ export function DiscoverClient() {
 
   return (
     <main className="flex min-h-screen flex-col bg-slate-50">
+      <SmartMatchModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        professionalIds={smartMatchIds}
+        professionals={professionals}
+        searchContext={searchContext}
+      />
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-950 to-teal-900 px-4 pb-14 pt-16 text-center sm:px-6">
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -606,19 +663,9 @@ export function DiscoverClient() {
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         {interpretedSearch?.summary ? (
-          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-5 py-4">
-            <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-100">
-              <Sparkles className="size-4 text-violet-600" aria-hidden />
-            </div>
-            <div>
-              <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-700">
-                IA interpretou sua busca
-              </p>
-              <p className="text-sm text-slate-700">
-                {interpretedSearch.summary}
-              </p>
-            </div>
-          </div>
+          <p className="mb-5 text-sm italic text-slate-500">
+            {interpretedSearch.summary}
+          </p>
         ) : null}
 
         {searchErrorMessage ? (
@@ -650,13 +697,16 @@ export function DiscoverClient() {
                 </p>
               ) : null}
             </div>
-            <Link
-              href="/recomendacoes"
-              className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
-            >
-              <Sparkles className="size-3.5" aria-hidden />
-              Ranking por IA
-            </Link>
+            {smartMatchIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+              >
+                <Sparkles className="size-3.5" aria-hidden />
+                Melhores para você
+              </button>
+            )}
           </div>
         ) : null}
 
@@ -672,11 +722,24 @@ export function DiscoverClient() {
 
         {!isInitialSearchLoading && professionals.length > 0 ? (
           <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {professionals.map((professional, cardIndex) => (
+            {professionals.slice(0, 6).map((professional, cardIndex) => (
               <DiscoverProfessionalCard
                 key={professional.id}
                 professional={professional}
                 cardIndex={cardIndex}
+                isFavorite={favoriteProfessionalIds.has(professional.id)}
+                onToggleFavorite={(professionalId) =>
+                  void toggleFavoriteProfessional(professionalId)
+                }
+              />
+            ))}
+
+
+            {professionals.slice(6).map((professional, cardIndex) => (
+              <DiscoverProfessionalCard
+                key={professional.id}
+                professional={professional}
+                cardIndex={cardIndex + 6}
                 isFavorite={favoriteProfessionalIds.has(professional.id)}
                 onToggleFavorite={(professionalId) =>
                   void toggleFavoriteProfessional(professionalId)
@@ -706,16 +769,23 @@ export function DiscoverClient() {
             <button
               type="button"
               onClick={() => {
-                setQuery('');
-                setModalityFilter(null);
-                setCityInput('');
-                setStateInput('');
-                void runProfessionalSearch(
-                  '',
-                  false,
-                  { city: '', state: '', lat: null, lng: null },
-                  null,
+                const matchingChip = SPECIALTY_CHIP_CONFIGS.find(
+                  (c) => c.value.toLowerCase() === query.trim().toLowerCase(),
                 );
+                if (matchingChip) {
+                  const params = new URLSearchParams();
+                  if (modalityFilter) params.set('modality', modalityFilter);
+                  router.push(
+                    `/profissionais/${matchingChip.slug}${params.size > 0 ? `?${params.toString()}` : ''}`,
+                  );
+                } else {
+                  const params = new URLSearchParams();
+                  if (query.trim()) params.set('q', query.trim());
+                  if (modalityFilter) params.set('modality', modalityFilter);
+                  router.push(
+                    `/profissionais${params.size > 0 ? `?${params.toString()}` : ''}`,
+                  );
+                }
               }}
               className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
             >
@@ -724,27 +794,6 @@ export function DiscoverClient() {
           </div>
         ) : null}
 
-        {!isInitialSearchLoading ? (
-          <div className="mt-12 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 p-8 text-center text-white shadow-xl shadow-violet-500/20">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-              <Sparkles className="size-6 text-white" aria-hidden />
-            </div>
-            <p className="text-xl font-extrabold">
-              Quer uma lista personalizada para você?
-            </p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-violet-200">
-              A IA analisa seu perfil e objetivos para montar um ranking
-              explicado com os melhores profissionais para você.
-            </p>
-            <Link
-              href="/recomendacoes"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-violet-700 transition hover:bg-violet-50"
-            >
-              <Sparkles className="size-4" aria-hidden />
-              Ver recomendações por IA
-            </Link>
-          </div>
-        ) : null}
       </div>
     </main>
   );

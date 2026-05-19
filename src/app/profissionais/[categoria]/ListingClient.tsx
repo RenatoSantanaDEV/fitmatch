@@ -650,15 +650,6 @@ export function ListingClient({ categoria }: { categoria: string }) {
               Filtros
             </button>
 
-            {/* AI ranking link */}
-            <Link
-              href="/recomendacoes"
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
-            >
-              <Sparkles className="size-3.5" aria-hidden />
-              <span className="hidden sm:inline">Ranking por IA</span>
-              <span className="sm:hidden">IA</span>
-            </Link>
           </div>
         </div>
       </div>
@@ -808,11 +799,11 @@ export function ListingClient({ categoria }: { categoria: string }) {
               melhores profissionais de {category.label} para você.
             </p>
             <Link
-              href="/recomendacoes"
+              href="/descobrir"
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-violet-700 transition hover:bg-violet-50"
             >
               <Sparkles className="size-4" aria-hidden />
-              Ver recomendações por IA
+              Explorar profissionais
             </Link>
           </div>
         )}

@@ -42,7 +42,7 @@ export default auth((req) => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const dest = `${req.nextUrl.pathname}${req.nextUrl.search}`;
-    const safeDest = dest.startsWith('/') ? dest : '/recomendacoes';
+    const safeDest = dest.startsWith('/') ? dest : '/descobrir';
     const home = new URL('/', req.url);
     home.searchParams.set('auth', 'login');
     home.searchParams.set('callbackUrl', safeDest);

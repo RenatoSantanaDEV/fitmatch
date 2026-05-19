@@ -5,7 +5,7 @@ import { useAuthModal } from './AuthModalContext';
 
 export function OpenAuthModal({
   mode,
-  callbackUrl = '/recomendacoes',
+  callbackUrl = '/descobrir',
   className,
   children,
 }: {

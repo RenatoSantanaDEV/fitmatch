@@ -175,7 +175,7 @@ function buildReasoning(
     parts.push('profissional verificado');
   }
 
-  return `Match heurístico: ${parts.join(', ')}.`;
+  return parts.join(', ') + '.';
 }
 
 function modalityLabel(modality: SessionModality): string {

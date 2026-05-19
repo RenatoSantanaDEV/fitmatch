@@ -44,7 +44,7 @@ export function AuthModalProvider({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<ModalMode>('login');
-  const [callbackUrl, setCallbackUrl] = useState('/recomendacoes');
+  const [callbackUrl, setCallbackUrl] = useState('/descobrir');
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -147,9 +147,9 @@ export function AuthModalProvider({
 }
 
 function safeRelativeCallback(raw: string | null | undefined): string {
-  if (!raw) return '/recomendacoes';
+  if (!raw) return '/descobrir';
   if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
-  return '/recomendacoes';
+  return '/descobrir';
 }
 
 export function AuthUrlSync() {

@@ -31,8 +31,8 @@ export class LLMMatchingAdapter implements IMatchingPort {
       apiKey: config.apiKey ?? process.env.AI_API_KEY ?? '',
       baseUrl: config.baseUrl ?? process.env.AI_API_BASE_URL ?? 'https://api.openai.com/v1',
       model: config.model ?? process.env.AI_MODEL ?? 'gpt-4o-mini',
-      timeoutMs: config.timeoutMs ?? Number(process.env.AI_API_TIMEOUT_MS ?? 15000),
-      maxAttempts: config.maxAttempts ?? 3,
+      timeoutMs: config.timeoutMs ?? Number(process.env.AI_API_TIMEOUT_MS ?? 8000),
+      maxAttempts: config.maxAttempts ?? 2,
     };
 
     if (!resolved.apiKey) {

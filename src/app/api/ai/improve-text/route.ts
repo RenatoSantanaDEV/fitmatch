@@ -1,26 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../lib/auth';
 import { unauthorized, forbidden } from '../../../../lib/apiResponse';
+import { checkRateLimit } from '../../../../lib/rateLimit';
 
-const LIMIT = 5;
-const WINDOW_MS = 60 * 60 * 1000;
-
-const rl = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const entry = rl.get(userId);
-  if (!entry || now > entry.resetAt) {
-    const resetAt = now + WINDOW_MS;
-    rl.set(userId, { count: 1, resetAt });
-    return { allowed: true, remaining: LIMIT - 1, resetAt };
-  }
-  if (entry.count >= LIMIT) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-  entry.count += 1;
-  return { allowed: true, remaining: LIMIT - entry.count, resetAt: entry.resetAt };
-}
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const RATE_KEY_PREFIX = 'improve-text';
 
 const PROMPTS = {
   bio: 'Melhore esta apresentação profissional de um professor de fitness para ser mais atrativa e convincente para potenciais alunos.',
@@ -59,18 +44,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { allowed, remaining, resetAt } = checkRateLimit(session.user.id);
-  if (!allowed) {
-    const minutesLeft = Math.ceil((resetAt - Date.now()) / 60_000);
+  const rateLimit = checkRateLimit(`${RATE_KEY_PREFIX}:${session.user.id}`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!rateLimit.ok) {
+    const minutesLeft = Math.ceil(rateLimit.retryAfter / 60);
     return NextResponse.json(
       { error: `Limite de melhorias atingido. Tente novamente em ${minutesLeft} min.` },
       {
         status: 429,
         headers: {
-          'X-RateLimit-Limit': String(LIMIT),
+          'X-RateLimit-Limit': String(RATE_LIMIT),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(Math.ceil(resetAt / 1000)),
-          'Retry-After': String(minutesLeft * 60),
+          'Retry-After': String(rateLimit.retryAfter),
         },
       },
     );
@@ -127,12 +111,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { improved, remaining },
+      { improved, remaining: rateLimit.remaining },
       {
         headers: {
-          'X-RateLimit-Limit': String(LIMIT),
-          'X-RateLimit-Remaining': String(remaining),
-          'X-RateLimit-Reset': String(Math.ceil(resetAt / 1000)),
+          'X-RateLimit-Limit': String(RATE_LIMIT),
+          'X-RateLimit-Remaining': String(rateLimit.remaining),
+          'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetAt / 1000)),
         },
       },
     );

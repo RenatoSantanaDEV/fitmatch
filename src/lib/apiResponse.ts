@@ -29,6 +29,13 @@ export function unprocessable(message: string) {
   return NextResponse.json({ error: message }, { status: 422 });
 }
 
+export function tooManyRequests(retryAfterSeconds: number, message?: string) {
+  return NextResponse.json(
+    { error: message ?? 'Too Many Requests' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+  );
+}
+
 export function serverError() {
   return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
 }

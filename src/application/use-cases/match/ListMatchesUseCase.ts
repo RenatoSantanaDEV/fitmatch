@@ -10,11 +10,6 @@ export interface ListMatchesInput {
   studentId?: string;
 }
 
-/**
- * Lists matches for a student (resolved via userId or studentId) and enriches
- * each row with the associated professional + user info so the UI can render
- * names, bios and pricing without additional round trips.
- */
 export class ListMatchesUseCase {
   constructor(
     private readonly matchRepo: IMatchRepository,
@@ -35,16 +30,16 @@ export class ListMatchesUseCase {
     const matches = await this.matchRepo.findByStudentId(student.id);
     if (matches.length === 0) return [];
 
-    const professionals = await Promise.all(
-      matches.map((m) => this.professionalRepo.findById(m.professionalId)),
-    );
-    const users = await Promise.all(
-      professionals.map((p) => (p ? this.userRepo.findById(p.userId) : Promise.resolve(null))),
-    );
+    const professionalIds = matches.map((m) => m.professionalId);
+    const professionals = await this.professionalRepo.findByIds(professionalIds);
+    const proById = new Map(professionals.map((p) => [p.id, p]));
 
-    return matches.map((m, i) => {
-      const pro = professionals[i];
-      const user = users[i];
+    const userIds = professionals.map((p) => p.userId);
+    const namesByUserId = await this.userRepo.findNamesByIds(userIds);
+
+    return matches.map((m) => {
+      const pro = proById.get(m.professionalId) ?? null;
+      const userData = pro ? namesByUserId.get(pro.userId) : undefined;
       return {
         id: m.id,
         studentId: m.studentId,
@@ -58,7 +53,8 @@ export class ListMatchesUseCase {
         professional: pro
           ? {
               id: pro.id,
-              name: user?.name ?? 'Profissional',
+              userId: pro.userId,
+              name: userData?.name ?? 'Profissional',
               bio: pro.bio,
               areas: pro.areas,
               modalities: pro.modalities,

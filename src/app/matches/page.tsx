@@ -9,5 +9,5 @@ export default async function MatchesRedirectPage({
   const sp = await searchParams;
   const qs = new URLSearchParams();
   if (sp.studentId) qs.set('studentId', sp.studentId);
-  redirect(qs.toString() ? `/recomendacoes?${qs.toString()}` : '/recomendacoes');
+  redirect('/descobrir');
 }

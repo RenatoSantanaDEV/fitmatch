@@ -7,7 +7,6 @@ import {
   Loader2,
   LogOut,
   Search,
-  Sparkles,
   User,
   ChevronDown,
 } from 'lucide-react';
@@ -81,14 +80,6 @@ export function SiteHeader() {
                   <span className="hidden lg:inline">Buscar</span>
                 </Link>
                 <Link
-                  href="/recomendacoes"
-                  className="header-icon-btn flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700"
-                  title="Recomendações por IA"
-                >
-                  <Sparkles className="size-4" strokeWidth={2} aria-hidden />
-                  <span className="hidden lg:inline">IA</span>
-                </Link>
-                <Link
                   href="/descobrir"
                   className="header-icon-btn flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-rose-50 hover:text-rose-600"
                   title="Favoritos"
@@ -108,9 +99,6 @@ export function SiteHeader() {
               <div className="flex items-center gap-0.5 sm:hidden">
                 <Link href="/descobrir" className="header-icon-btn flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-emerald-700">
                   <Search className="size-4" aria-hidden />
-                </Link>
-                <Link href="/recomendacoes" className="header-icon-btn flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-violet-50 hover:text-violet-700">
-                  <Sparkles className="size-4" aria-hidden />
                 </Link>
               </div>
 
@@ -154,10 +142,6 @@ export function SiteHeader() {
                     </div>
 
                     <div className="py-1">
-                      <Link href="/recomendacoes" role="menuitem" className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
-                        <Sparkles className="size-4 shrink-0 text-violet-500" aria-hidden />
-                        Recomendações IA
-                      </Link>
                       <Link href="/descobrir" role="menuitem" className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
                         <Heart className="size-4 shrink-0 text-rose-500" aria-hidden />
                         Favoritos
@@ -208,14 +192,14 @@ export function SiteHeader() {
               </Link>
               <button
                 type="button"
-                onClick={() => openLogin({ callbackUrl: '/recomendacoes' })}
+                onClick={() => openLogin({ callbackUrl: '/descobrir' })}
                 className="cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-900 active:scale-[0.98]"
               >
                 Entrar
               </button>
               <button
                 type="button"
-                onClick={() => openRegister({ callbackUrl: '/recomendacoes' })}
+                onClick={() => openRegister({ callbackUrl: '/descobrir' })}
                 className="cursor-pointer rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.98]"
               >
                 Cadastrar grátis

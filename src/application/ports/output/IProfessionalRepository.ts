@@ -28,6 +28,7 @@ export interface PaginatedResult<T> {
 
 export interface IProfessionalRepository {
   findById(id: string): Promise<Professional | null>;
+  findByIds(ids: string[]): Promise<Professional[]>;
   findByUserId(userId: string): Promise<Professional | null>;
   save(professional: Omit<Professional, 'id' | 'createdAt' | 'updatedAt' | 'averageRating' | 'totalReviews'>): Promise<Professional>;
   update(id: string, data: Partial<Omit<Professional, 'id' | 'userId' | 'createdAt'>>): Promise<Professional>;

@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       radiusKm: useGeo ? b.radiusKm : undefined,
       page: b.page,
       limit: b.limit,
+      showAll: b.showAll,
     });
     return ok({ interpreted, ...result });
   } catch (err) {

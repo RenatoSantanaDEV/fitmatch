@@ -8,6 +8,7 @@ export type SearchProfessionalsInput = ListProfessionalsDTO & {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  showAll?: boolean;
 };
 
 export class SearchProfessionalsWithAiUseCase {
@@ -51,7 +52,7 @@ export class SearchProfessionalsWithAiUseCase {
       trimmedQuery.length <= 60 &&
       /^[\p{L}\s'-]+$/u.test(trimmedQuery);
 
-    if (!hasPlace && !hasSemantic && !looksLikeName) {
+    if (!input.showAll && !hasPlace && !hasSemantic && !looksLikeName) {
       return {
         interpreted: {
           specializations: [],
