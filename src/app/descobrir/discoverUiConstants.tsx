@@ -50,6 +50,18 @@ export interface SpecialtyChipConfig {
   slug: string;
 }
 
+/** Used only by SmartMatchModal for avatar backgrounds. */
+export const PROFESSIONAL_CARD_GRADIENTS = [
+  'from-emerald-400 to-teal-600',
+  'from-violet-400 to-purple-600',
+  'from-orange-400 to-amber-600',
+  'from-sky-400 to-blue-600',
+  'from-rose-400 to-pink-600',
+  'from-indigo-400 to-blue-700',
+  'from-green-400 to-emerald-600',
+  'from-fuchsia-400 to-violet-600',
+] as const;
+
 export const SPECIALTY_CHIP_CONFIGS: SpecialtyChipConfig[] = [
   { label: 'Personal Trainer', value: 'personal trainer', icon: Dumbbell,      slug: 'personal-trainer' },
   { label: 'Pilates',          value: 'pilates',          icon: PersonStanding, slug: 'pilates'          },
@@ -61,14 +73,3 @@ export const SPECIALTY_CHIP_CONFIGS: SpecialtyChipConfig[] = [
   { label: 'Reabilitação',     value: 'reabilitação',     icon: HeartPulse,     slug: 'reabilitacao'     },
   { label: 'Corrida',          value: 'corrida',          icon: Activity,       slug: 'corrida'          },
 ];
-
-export const PROFESSIONAL_CARD_GRADIENTS = [
-  'from-emerald-400 to-teal-600',
-  'from-violet-400 to-purple-600',
-  'from-orange-400 to-amber-600',
-  'from-sky-400 to-blue-600',
-  'from-rose-400 to-pink-600',
-  'from-indigo-400 to-blue-700',
-  'from-green-400 to-emerald-600',
-  'from-fuchsia-400 to-violet-600',
-] as const;

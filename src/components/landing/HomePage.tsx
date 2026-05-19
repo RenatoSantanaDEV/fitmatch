@@ -12,9 +12,11 @@ import {
   Languages,
   Search,
   Sparkles,
-  Clock,
   CheckCircle2,
   XCircle,
+  Star,
+  MapPin,
+  Monitor,
 } from 'lucide-react';
 import { OpenAuthModal } from '../auth/OpenAuthModal';
 import { FindTeacherSearchPanel } from './FindTeacherSearchPanel';
@@ -25,21 +27,21 @@ const howItWorks = [
     step: '01',
     title: 'Crie seu perfil',
     desc: 'Informe seus objetivos, nível de condicionamento, modalidade preferida e orçamento disponível.',
-    color: 'bg-emerald-500/15 text-emerald-400',
+    iconClass: 'bg-emerald-100 text-emerald-700',
   },
   {
     icon: Zap,
     step: '02',
-    title: 'IA gera o ranking',
-    desc: 'Nossa inteligência artificial analisa todos os professores cadastrados e monta um ranking explicado.',
-    color: 'bg-violet-500/15 text-violet-400',
+    title: 'Receba seu ranking',
+    desc: 'Nossa plataforma analisa todos os professores cadastrados e monta um ranking com explicações em português.',
+    iconClass: 'bg-violet-100 text-violet-700',
   },
   {
     icon: MessageSquare,
     step: '03',
     title: 'Conecte-se',
     desc: 'Escolha o professor ideal e inicie sua jornada com uma primeira sessão gratuita.',
-    color: 'bg-orange-500/15 text-orange-400',
+    iconClass: 'bg-emerald-100 text-emerald-700',
   },
 ];
 
@@ -48,29 +50,25 @@ const features = [
     icon: Brain,
     title: 'Matching por IA',
     desc: 'Algoritmo de compatibilidade que analisa objetivos, orçamento, localização e estilo de treino.',
-    color: 'bg-violet-100 text-violet-700',
-    delay: 'delay-0',
+    iconClass: 'bg-violet-100 text-violet-700',
   },
   {
     icon: BadgeCheck,
     title: 'Perfis verificados',
     desc: 'Todos os professores passam por verificação de credenciais e são avaliados pelos alunos.',
-    color: 'bg-emerald-100 text-emerald-700',
-    delay: 'delay-100',
+    iconClass: 'bg-emerald-100 text-emerald-700',
   },
   {
     icon: Gift,
     title: 'Gratuito para alunos',
     desc: 'Acesso completo à plataforma, buscas e recomendações sem nenhum custo para estudantes.',
-    color: 'bg-orange-100 text-orange-700',
-    delay: 'delay-200',
+    iconClass: 'bg-orange-100 text-orange-700',
   },
   {
     icon: Languages,
     title: 'Explicações em português',
     desc: 'Cada recomendação vem acompanhada de um texto claro explicando por que aquele professor foi indicado.',
-    color: 'bg-sky-100 text-sky-700',
-    delay: 'delay-300',
+    iconClass: 'bg-sky-100 text-sky-700',
   },
 ];
 
@@ -81,81 +79,139 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* ===================================================
           HERO
       =================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute inset-0 select-none" aria-hidden>
-          <div className="absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="absolute -right-20 top-0 h-96 w-96 rounded-full bg-teal-400/8 blur-3xl" />
-          <div className="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-500/8 blur-3xl" />
-          {/* Subtle grid */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage:
-                'repeating-linear-gradient(0deg, white 0px, white 1px, transparent 1px, transparent 64px), repeating-linear-gradient(90deg, white 0px, white 1px, transparent 1px, transparent 64px)',
-            }}
-          />
-        </div>
+      <section className="border-b border-emerald-100 bg-gradient-to-b from-emerald-50/60 to-white">
+        <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-[1fr_420px] lg:gap-16 lg:py-24 lg:px-10">
 
-        <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-10 px-4 py-24 text-center sm:px-6 lg:py-32">
-
-          {/* AI badge */}
-          <div className="animate-fade-up delay-0 inline-flex w-fit items-center gap-2.5 rounded-full border border-violet-500/30 bg-violet-500/15 px-4 py-1.5 ai-badge-pulse">
-            <span className="flex h-2 w-2 rounded-full bg-violet-400" />
-            <span className="text-xs font-semibold text-violet-300">
-              Matching com Inteligência Artificial
+          {/* Left — copy + actions */}
+          <div className="flex flex-col gap-7">
+            <span className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              Marketplace de Educação Física
             </span>
+
+            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+              Encontre o professor de{' '}
+              educação física{' '}
+              <span className="text-emerald-600">certo para você</span>
+            </h1>
+
+            <p className="max-w-lg text-lg leading-relaxed text-slate-500">
+              A FitMatch conecta alunos a educadores físicos verificados com base em seus objetivos,
+              localização e disponibilidade — de forma simples e gratuita.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              {isAuthenticated ? (
+                <FindTeacherSearchPanel />
+              ) : (
+                <>
+                  <OpenAuthModal
+                    mode="register"
+                    callbackUrl="/descobrir"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                  >
+                    Começar grátis
+                    <ArrowRight className="size-4" aria-hidden />
+                  </OpenAuthModal>
+                  <OpenAuthModal
+                    mode="login"
+                    callbackUrl="/descobrir"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98]"
+                  >
+                    Já tenho conta
+                  </OpenAuthModal>
+                </>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-8 border-t border-emerald-100 pt-6">
+              {[
+                { value: '50+', label: 'Professores verificados' },
+                { value: '12', label: 'Especialidades' },
+                { value: '100%', label: 'Grátis para alunos' },
+              ].map((s) => (
+                <div key={s.label}>
+                  <p className="text-2xl font-extrabold text-emerald-600">{s.value}</p>
+                  <p className="mt-0.5 text-xs font-medium text-slate-400">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h1 className="animate-fade-up delay-100 text-5xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Encontre o professor de{' '}
-            <span className="text-gradient-brand">educação física</span>{' '}
-            certo para você
-          </h1>
-
-          <p className="animate-fade-up delay-200 max-w-xl text-lg leading-relaxed text-slate-300">
-            A FitMatch usa IA para conectar alunos a educadores físicos compatíveis —
-            com ranking personalizado e explicação em português.
-          </p>
-
-          <div className="animate-fade-up delay-300 flex flex-wrap justify-center gap-3">
-            {isAuthenticated ? (
-              <FindTeacherSearchPanel />
-            ) : (
-              <>
-                <OpenAuthModal
-                  mode="register"
-                  callbackUrl="/descobrir"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-[1.03] hover:bg-emerald-400 active:scale-[0.98]"
-                >
-                  Começar grátis
-                  <ArrowRight className="size-4" aria-hidden />
-                </OpenAuthModal>
-                <OpenAuthModal
-                  mode="login"
-                  callbackUrl="/descobrir"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:scale-[1.02] hover:bg-white/20"
-                >
-                  Já tenho conta
-                </OpenAuthModal>
-              </>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="animate-fade-up delay-400 flex flex-wrap justify-center gap-10 border-t border-white/10 pt-8">
-            {[
-              { value: '50+', label: 'Professores verificados', delay: 'delay-500' },
-              { value: '12', label: 'Especialidades', delay: 'delay-600' },
-              { value: '100%', label: 'Grátis para alunos', delay: 'delay-700' },
-            ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className={`animate-pop-in ${s.delay} text-3xl font-extrabold text-white`}>
-                  {s.value}
-                </p>
-                <p className="mt-0.5 text-xs font-medium text-emerald-300/80">{s.label}</p>
+          {/* Right — mock teacher card */}
+          <div className="flex flex-col">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              {/* Header */}
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white">
+                  C
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-900">Carlos Mendes</span>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      <BadgeCheck className="size-3" aria-hidden />
+                      Verificado
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-sm text-slate-500">Personal Trainer · CREF 12345/SP</p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className="size-3.5 fill-amber-400 text-amber-400"
+                        aria-hidden
+                      />
+                    ))}
+                    <span className="text-sm font-semibold text-slate-800">4.9</span>
+                    <span className="text-xs text-slate-400">(48 avaliações)</span>
+                  </div>
+                </div>
               </div>
-            ))}
+
+              {/* Specialty tags */}
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {['Hipertrofia', 'Emagrecimento', 'Funcional'].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Info */}
+              <div className="mt-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden />
+                  São Paulo, SP
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Monitor className="size-3.5 shrink-0 text-slate-400" aria-hidden />
+                  Presencial · Online
+                </div>
+              </div>
+
+              {/* Price + CTA */}
+              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                <div>
+                  <span className="text-lg font-bold text-slate-900">R$ 90</span>
+                  <span className="text-sm text-slate-400">/sessão</span>
+                </div>
+                <Link
+                  href="/descobrir"
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Ver perfil
+                </Link>
+              </div>
+            </div>
+
+            <p className="mt-2.5 text-center text-xs text-slate-400">
+              +50 professores verificados disponíveis
+            </p>
           </div>
         </div>
       </section>
@@ -165,7 +221,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       =================================================== */}
       {!isAuthenticated && (
         <section className="border-b border-slate-100 bg-slate-50 py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
             <div className="mb-10 text-center">
               <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
                 Para você
@@ -181,59 +237,47 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               <OpenAuthModal
                 mode="login"
                 callbackUrl="/descobrir"
-                className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-emerald-100 bg-white p-8 text-left shadow-sm transition-all hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1"
+                className="flex w-full cursor-pointer flex-col rounded-xl border border-slate-200 border-t-4 border-t-emerald-500 bg-white p-8 text-left transition hover:border-emerald-200 hover:shadow-md"
               >
-                <div
-                  className="pointer-events-none absolute right-0 top-0 h-48 w-48 translate-x-16 -translate-y-16 rounded-full bg-emerald-400/10 transition-all duration-500 group-hover:bg-emerald-400/20 group-hover:scale-110"
-                  aria-hidden
-                />
-                <div className="relative">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/20 transition-transform duration-300 group-hover:scale-110">
-                    <svg viewBox="0 0 24 24" fill="none" className="size-7" aria-hidden>
-                      <path d="M12 2C9.24 2 7 4.24 7 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" fill="white" />
-                    </svg>
-                  </div>
-                  <span className="inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                    Aluno
-                  </span>
-                  <h3 className="mt-3 text-xl font-extrabold text-slate-900">Sou Aluno</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                    Receba uma lista personalizada de professores alinhados ao seu objetivo,
-                    nível e disponibilidade — gerada por IA.
-                  </p>
-                  <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all group-hover:gap-3">
-                    Entrar como aluno <ArrowRight className="size-4" aria-hidden />
-                  </span>
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600">
+                  <svg viewBox="0 0 24 24" fill="none" className="size-6" aria-hidden>
+                    <path d="M12 2C9.24 2 7 4.24 7 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" fill="white" />
+                  </svg>
                 </div>
+                <span className="inline-block rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                  Aluno
+                </span>
+                <h3 className="mt-3 text-xl font-extrabold text-slate-900">Sou Aluno</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Receba uma lista personalizada de professores alinhados ao seu objetivo,
+                  nível e disponibilidade.
+                </p>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all hover:gap-3">
+                  Entrar como aluno <ArrowRight className="size-4" aria-hidden />
+                </span>
               </OpenAuthModal>
 
               {/* Professional */}
               <Link
                 href="/dar-aulas"
-                className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-orange-100 bg-white p-8 text-left shadow-sm transition-all hover:border-orange-300 hover:shadow-xl hover:-translate-y-1"
+                className="flex w-full flex-col rounded-xl border border-slate-200 border-t-4 border-t-slate-700 bg-white p-8 text-left transition hover:border-slate-300 hover:shadow-md"
               >
-                <div
-                  className="pointer-events-none absolute right-0 top-0 h-48 w-48 translate-x-16 -translate-y-16 rounded-full bg-orange-400/10 transition-all duration-500 group-hover:bg-orange-400/20 group-hover:scale-110"
-                  aria-hidden
-                />
-                <div className="relative">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 shadow-lg shadow-orange-500/20 transition-transform duration-300 group-hover:scale-110">
-                    <svg viewBox="0 0 24 24" fill="none" className="size-7" aria-hidden>
-                      <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="white" />
-                    </svg>
-                  </div>
-                  <span className="inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
-                    Professor
-                  </span>
-                  <h3 className="mt-3 text-xl font-extrabold text-slate-900">Sou Professor</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                    Crie seu perfil profissional e seja encontrado por alunos com objetivos
-                    compatíveis com sua especialidade.
-                  </p>
-                  <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-orange-600 transition-all group-hover:gap-3">
-                    Dar aulas na FitMatch <ArrowRight className="size-4" aria-hidden />
-                  </span>
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800">
+                  <svg viewBox="0 0 24 24" fill="none" className="size-6" aria-hidden>
+                    <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="white" />
+                  </svg>
                 </div>
+                <span className="inline-block rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                  Professor
+                </span>
+                <h3 className="mt-3 text-xl font-extrabold text-slate-900">Sou Professor</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Crie seu perfil profissional e seja encontrado por alunos com objetivos
+                  compatíveis com sua especialidade.
+                </p>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-slate-700 transition-all hover:gap-3">
+                  Dar aulas na FitMatch <ArrowRight className="size-4" aria-hidden />
+                </span>
               </Link>
             </div>
           </div>
@@ -243,55 +287,42 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* ===================================================
           HOW IT WORKS
       =================================================== */}
-      <section className="relative overflow-hidden bg-slate-950 py-20 sm:py-28">
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="absolute left-0 top-0 h-72 w-72 rounded-full bg-emerald-500/5 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-violet-500/5 blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+      <section className="border-b border-slate-100 bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mb-16 text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
               É simples assim
             </span>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               Como funciona a FitMatch
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
               Do cadastro ao primeiro contato com seu professor em menos de 5 minutos.
             </p>
           </div>
 
           <div className="relative grid grid-cols-1 gap-12 sm:grid-cols-3">
-            {/* Connecting dashed line */}
+            {/* Connecting line */}
             <div
-              className="pointer-events-none absolute left-0 right-0 top-[18px] hidden h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent sm:block"
+              className="pointer-events-none absolute left-0 right-0 top-[18px] hidden h-px bg-slate-200 sm:block"
               aria-hidden
             />
 
-            {howItWorks.map((item, i) => {
+            {howItWorks.map((item) => {
               const Icon = item.icon;
               return (
-                <div
-                  key={item.title}
-                  className="group flex flex-col gap-5"
-                  style={{ animationDelay: `${i * 150}ms` }}
-                >
-                  {/* Step number */}
+                <div key={item.title} className="flex flex-col gap-5">
                   <div className="flex items-center gap-4">
-                    <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm font-extrabold text-white shadow-lg shadow-emerald-500/30 transition-transform duration-300 group-hover:scale-110">
+                    <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-extrabold text-white">
                       {item.step}
                     </span>
                   </div>
-
-                  {/* Icon */}
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 ${item.color}`}>
-                    <Icon className="size-6" aria-hidden />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.iconClass}`}>
+                    <Icon className="size-5" aria-hidden />
                   </div>
-
-                  {/* Text */}
                   <div>
-                    <h3 className="text-lg font-extrabold text-white">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.desc}</p>
+                    <h3 className="text-lg font-extrabold text-slate-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.desc}</p>
                   </div>
                 </div>
               );
@@ -303,8 +334,8 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* ===================================================
           WHY FITMATCH
       =================================================== */}
-      <section className="border-b border-slate-100 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <section className="border-b border-slate-100 bg-slate-50 py-16 sm:py-24">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mb-12 text-center">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
               Nossos diferenciais
@@ -314,19 +345,19 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => {
               const Icon = f.icon;
               return (
                 <div
                   key={f.title}
-                  className={`card-lift flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm`}
+                  className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
                 >
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 ${f.color}`}>
-                    <Icon className="size-6" aria-hidden />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${f.iconClass}`}>
+                    <Icon className="size-5" aria-hidden />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900">{f.title}</h3>
+                    <h3 className="font-bold text-slate-900">{f.title}</h3>
                     <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.desc}</p>
                   </div>
                 </div>
@@ -339,8 +370,8 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* ===================================================
           DUAS FORMAS DE BUSCAR (âncora de ajuda)
       =================================================== */}
-      <section id="ajuda-fitmatch" className="border-b border-slate-100 bg-slate-50 py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <section id="ajuda-fitmatch" className="border-b border-slate-100 bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mb-10 text-center">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
               Como usar
@@ -352,15 +383,15 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {/* Busca manual */}
-            <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                <Search className="size-6" aria-hidden />
+            <div className="flex flex-col gap-5 rounded-xl border border-slate-200 border-t-4 border-t-emerald-500 bg-white p-8 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <Search className="size-5" aria-hidden />
               </div>
               <div>
-                <span className="inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                <span className="inline-block rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                   Busca por critério
                 </span>
-                <h3 className="mt-3 text-xl font-extrabold text-slate-900">Você controla os filtros</h3>
+                <h3 className="mt-3 text-xl font-bold text-slate-900">Você controla os filtros</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-500">
                   Filtre por cidade, especialidade, modalidade (presencial, online ou híbrido)
                   e faixa de preço. Ideal quando você já sabe o que procura.
@@ -386,17 +417,17 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
 
             {/* IA Recomendações */}
-            <div className="flex flex-col gap-5 rounded-2xl border border-violet-100 bg-white p-8 shadow-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
-                <Sparkles className="size-6" aria-hidden />
+            <div className="flex flex-col gap-5 rounded-xl border border-slate-200 border-t-4 border-t-violet-500 bg-white p-8 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                <Sparkles className="size-5" aria-hidden />
               </div>
               <div>
-                <span className="inline-block rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
-                  IA Recomendações
+                <span className="inline-block rounded-md bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
+                  Recomendação inteligente
                 </span>
-                <h3 className="mt-3 text-xl font-extrabold text-slate-900">A IA trabalha por você</h3>
+                <h3 className="mt-3 text-xl font-bold text-slate-900">A plataforma trabalha por você</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  Informe seus objetivos, nível e preferências uma vez. A IA analisa todos os
+                  Informe seus objetivos, nível e preferências uma vez. A plataforma analisa todos os
                   professores e gera um ranking com explicações em português.
                 </p>
               </div>
@@ -423,22 +454,18 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       </section>
 
       {/* ===================================================
-          PROBLEMA → SOLUÇÃO  (substitui CTA final duplicado)
+          PROBLEMA → SOLUÇÃO
       =================================================== */}
       {!isAuthenticated && (
-        <section className="relative overflow-hidden bg-slate-950 py-20 sm:py-28">
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-emerald-500/5 blur-3xl" />
-            <div className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-violet-500/5 blur-3xl" />
-          </div>
-          <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-            <div className="mb-16 text-center">
-              <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">
+        <section className="border-b border-slate-100 bg-slate-50 py-20 sm:py-28">
+          <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+            <div className="mb-14 text-center">
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
                 O problema que resolvemos
               </span>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
                 Encontrar o professor certo levava meses.{' '}
-                <span className="text-gradient-brand">Agora leva minutos.</span>
+                <span className="text-emerald-600">Agora leva minutos.</span>
               </h2>
             </div>
 
@@ -446,47 +473,41 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
               {[
                 {
                   problem: 'Depende de indicação boca a boca',
-                  solution: 'IA analisa todos os professores disponíveis por você',
-                  icon: Clock,
+                  solution: 'Plataforma analisa todos os professores disponíveis por você',
                 },
                 {
                   problem: 'Perfis sem contexto — não sabe se é compatível',
                   solution: 'Cada recomendação vem com explicação clara em português',
-                  icon: Brain,
                 },
                 {
                   problem: 'Não sabe se o professor atende seu objetivo',
                   solution: 'Match por objetivo, localização, modalidade e orçamento',
-                  icon: CheckCircle2,
                 },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.problem} className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.04] p-6">
-                    <div className="flex items-start gap-3 text-sm text-slate-500">
-                      <XCircle className="mt-0.5 size-4 shrink-0 text-rose-500/70" aria-hidden />
-                      <span>{item.problem}</span>
-                    </div>
-                    <div className="h-px bg-white/10" />
-                    <div className="flex items-start gap-3 text-sm text-slate-200">
-                      <Icon className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />
-                      <span>{item.solution}</span>
-                    </div>
+              ].map((item) => (
+                <div key={item.problem} className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6">
+                  <div className="flex items-start gap-3 text-sm text-slate-500">
+                    <XCircle className="mt-0.5 size-4 shrink-0 text-rose-400" aria-hidden />
+                    <span>{item.problem}</span>
                   </div>
-                );
-              })}
+                  <div className="h-px bg-slate-100" />
+                  <div className="flex items-start gap-3 text-sm font-medium text-slate-700">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" aria-hidden />
+                    <span>{item.solution}</span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="mt-14 text-center">
               <OpenAuthModal
                 mode="register"
                 callbackUrl="/descobrir"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-emerald-500 px-9 py-4 text-sm font-bold text-white shadow-2xl shadow-emerald-500/25 transition-all hover:scale-[1.03] hover:bg-emerald-400 active:scale-[0.98]"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
               >
-                Criar conta grátis — é rápido
+                Criar conta grátis
                 <ArrowRight className="size-4" aria-hidden />
               </OpenAuthModal>
-              <p className="mt-3 text-xs text-slate-500">Sem cartão de crédito. Sem compromisso.</p>
+              <p className="mt-3 text-xs text-slate-400">Sem cartão de crédito. Sem compromisso.</p>
             </div>
           </div>
         </section>
@@ -494,30 +515,32 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
 
       {/* CTA para usuário autenticado */}
       {isAuthenticated && (
-        <section className="relative overflow-hidden bg-gradient-to-br from-emerald-700 to-teal-700 py-16 sm:py-20">
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-            <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-          </div>
-          <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">
-                Continue explorando
-              </p>
-              <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                Encontre seu professor ideal
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-lg text-emerald-100">
-                Ajuste suas preferências e veja o ranking gerado especialmente para você.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Link href="/descobrir" className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-extrabold text-emerald-700 shadow-2xl shadow-emerald-900/30 transition-all hover:scale-[1.03] hover:bg-emerald-50 active:scale-[0.98]">
-                  Buscar professores
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-                <Link href="/descobrir" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:scale-[1.02] hover:bg-white/20">
-                  Descobrir professores
-                </Link>
-              </div>
+        <section className="bg-emerald-600 py-16 sm:py-20">
+          <div className="mx-auto max-w-[1320px] px-6 text-center lg:px-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">
+              Continue explorando
+            </p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              Encontre seu professor ideal
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base text-emerald-100">
+              Ajuste suas preferências e veja o ranking gerado especialmente para você.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/descobrir"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-7 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.98]"
+              >
+                Buscar professores
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+              <Link
+                href="/descobrir"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/30 bg-transparent px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                Descobrir professores
+              </Link>
+            </div>
           </div>
         </section>
       )}

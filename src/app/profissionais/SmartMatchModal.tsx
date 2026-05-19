@@ -10,8 +10,8 @@ import {
   Loader2,
   MapPin,
   RotateCcw,
-  Sparkles,
   Star,
+  Users,
   X,
 } from 'lucide-react';
 import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
@@ -212,34 +212,33 @@ export function SmartMatchModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
       onClick={(e) => { if (e.target === overlayRef.current && step !== 'loading') onClose(); }}
     >
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" aria-hidden />
+      <div className="modal-overlay-enter absolute inset-0 bg-slate-900/60 backdrop-blur-sm" aria-hidden />
 
       <div
-        className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-lg"
+        className="modal-panel-enter relative z-10 flex w-full flex-col overflow-hidden bg-white shadow-xl
+          rounded-t-2xl max-h-[92dvh]
+          sm:rounded-2xl sm:max-w-4xl sm:max-h-[88vh]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="smart-modal-title"
-        style={{ maxHeight: 'min(90vh, 640px)' }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-50">
-              <Sparkles className="size-4 text-violet-600" aria-hidden />
+        <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+              <Users className="size-4 text-emerald-600" aria-hidden />
             </div>
             <div>
               <h2 id="smart-modal-title" className="text-sm font-bold text-slate-900">
-                {step === 'results' ? 'Melhores para você' : 'Encontrar os melhores'}
+                {step === 'results' ? 'Recomendados para você' : 'Encontrar profissionais compatíveis'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-slate-500">
                 {step === 'results'
-                  ? `${merged.length} profissional${merged.length !== 1 ? 'is' : ''} top desta busca`
-                  : searchContext
-                    ? `buscando por ${searchContext}`
-                    : 'Baseado no seu perfil e objetivos'}
+                  ? `${merged.length} profissional${merged.length !== 1 ? 'is' : ''} selecionados para o seu perfil`
+                  : 'Informe seus objetivos e preferências para receber uma seleção personalizada.'}
               </p>
             </div>
           </div>
@@ -247,7 +246,7 @@ export function SmartMatchModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               aria-label="Fechar"
             >
               <X className="size-4" aria-hidden />
@@ -256,7 +255,7 @@ export function SmartMatchModal({
         </div>
 
         {/* ── Body ── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 
           {/* Form steps — shared component */}
           {isFormStep && (
@@ -266,21 +265,21 @@ export function SmartMatchModal({
               onFormChange={setForm}
               onStepChange={setStep}
               onSubmit={() => void submit()}
-              submitLabel="Ver os melhores para mim"
-              submitIcon={<Sparkles className="size-4" aria-hidden />}
-              footerNote="Análise baseada no seu perfil · Não substitui avaliação presencial"
+              onCancel={onClose}
+              submitLabel="Ver recomendações"
+              footerNote="Suas respostas ajudam a ordenar os profissionais mais compatíveis."
             />
           )}
 
           {/* Loading */}
           {step === 'loading' && (
-            <div className="flex flex-col items-center px-6 py-12">
-              <div className="flex size-16 items-center justify-center rounded-full bg-violet-50">
-                <Loader2 className="size-8 animate-spin text-violet-500" aria-hidden />
+            <div className="flex flex-col items-center px-6 py-14">
+              <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50">
+                <Loader2 className="size-7 animate-spin text-emerald-600" aria-hidden />
               </div>
               <h3 className="mt-6 text-center text-base font-bold text-slate-900">Analisando compatibilidade…</h3>
               <p className="mt-2 min-h-[20px] text-center text-sm text-slate-500">{LOADING_MESSAGES[loadingMsgIdx]}</p>
-              <p className="mt-6 text-center text-xs text-slate-400">
+              <p className="mt-5 text-center text-xs text-slate-400">
                 Combinando <strong>{COMPATIBILITY_GOALS.find((g) => g.id === form.mainGoal)?.label ?? 'seus objetivos'}</strong> com os profissionais encontrados…
               </p>
             </div>
@@ -369,7 +368,7 @@ export function SmartMatchModal({
               <h3 className="mt-4 text-base font-bold text-slate-900">Não foi possível analisar</h3>
               <p className="mt-2 text-sm text-slate-500">{error ?? 'Erro ao processar a análise. Tente novamente.'}</p>
               <div className="mt-6 flex flex-col gap-3 pb-2">
-                <button type="button" onClick={() => void submit()} className="rounded-full bg-violet-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700">
+                <button type="button" onClick={() => void submit()} className="rounded-md bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
                   Tentar novamente
                 </button>
                 <button type="button" onClick={onClose} className="text-sm font-medium text-slate-500 transition hover:text-slate-700">

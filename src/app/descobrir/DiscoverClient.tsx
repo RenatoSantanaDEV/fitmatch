@@ -3,15 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Activity,
-  ChevronDown,
   Loader2,
-  MapPin,
-  Navigation,
   Search,
+  SlidersHorizontal,
   Sparkles,
-  Star,
-  Users,
   X,
 } from 'lucide-react';
 import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
@@ -21,10 +16,11 @@ import { augmentQueryWithModalityFilter } from './discoverSearchQuery';
 import type { ModalityFilter, SearchLocationOverrides } from './discoverSearchTypes';
 import { DiscoverCardSkeleton } from './DiscoverCardSkeleton';
 import { DiscoverProfessionalCard } from './DiscoverProfessionalCard';
-import { MODALITY_MENU_OPTIONS, SPECIALTY_CHIP_CONFIGS } from './discoverUiConstants';
+import { FilterSidebar } from './FilterSidebar';
+import { SPECIALTY_CHIP_CONFIGS } from './discoverUiConstants';
 import { SmartMatchModal } from '../profissionais/SmartMatchModal';
 
-const SKELETON_CARD_COUNT = 6;
+const SKELETON_CARD_COUNT = 5;
 const SEARCH_RADIUS_KM = 50;
 const SEARCH_PAGE = 1;
 const SEARCH_PAGE_SIZE = 24;
@@ -37,40 +33,39 @@ interface DiscoverClientProps {
 }
 
 export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProps) {
+  // Search query
   const [query, setQuery] = useState('');
-  const [activeSpecialtyValue, setActiveSpecialtyValue] = useState<string | null>(
-    null,
-  );
-  const [modalityFilter, setModalityFilter] = useState<ModalityFilter>(null);
-  const [isModalityMenuOpen, setIsModalityMenuOpen] = useState(false);
+  const [activeSpecialtyValue, setActiveSpecialtyValue] = useState<string | null>(null);
 
+  // Location state
   const [cityInput, setCityInput] = useState(defaultCity ?? '');
   const [stateInput, setStateInput] = useState(defaultState ?? '');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-
   const [isGeoLoading, setIsGeoLoading] = useState(false);
   const [geoHintMessage, setGeoHintMessage] = useState<string | null>(null);
-  const [locationValidationError, setLocationValidationError] = useState<
-    string | null
-  >(null);
+  const [locationValidationError, setLocationValidationError] = useState<string | null>(null);
 
+  // Modality
+  const [modalityFilter, setModalityFilter] = useState<ModalityFilter>(null);
+
+  // Client-side filters
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [maxPriceInput, setMaxPriceInput] = useState('');
+  const [acceptingOnly, setAcceptingOnly] = useState(false);
+
+  // Mobile drawer
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  // Search state
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isInitialSearchLoading, setIsInitialSearchLoading] = useState(true);
-  const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(
-    null,
-  );
-  const [interpretedSearch, setInterpretedSearch] =
-    useState<InterpretedProfessionalSearch | null>(null);
-  const [professionals, setProfessionals] = useState<ProfessionalResponseDTO[]>(
-    [],
-  );
+  const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
+  const [interpretedSearch, setInterpretedSearch] = useState<InterpretedProfessionalSearch | null>(null);
+  const [professionals, setProfessionals] = useState<ProfessionalResponseDTO[]>([]);
   const [totalMatchCount, setTotalMatchCount] = useState(0);
-  const [favoriteProfessionalIds, setFavoriteProfessionalIds] = useState(
-    () => new Set<string>(),
-  );
-  const [hasCompletedAtLeastOneSearch, setHasCompletedAtLeastOneSearch] =
-    useState(false);
+  const [favoriteProfessionalIds, setFavoriteProfessionalIds] = useState(() => new Set<string>());
+  const [hasCompletedAtLeastOneSearch, setHasCompletedAtLeastOneSearch] = useState(false);
 
   // Smart match modal
   const [showModal, setShowModal] = useState(false);
@@ -79,21 +74,27 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
 
   const router = useRouter();
   const specialtySearchInputRef = useRef<HTMLInputElement>(null);
-  const modalityMenuContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleDocumentMouseDown(event: MouseEvent) {
-      if (
-        modalityMenuContainerRef.current &&
-        !modalityMenuContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsModalityMenuOpen(false);
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        specialtySearchInputRef.current?.focus();
+        specialtySearchInputRef.current?.select();
       }
     }
-    document.addEventListener('mousedown', handleDocumentMouseDown);
-    return () =>
-      document.removeEventListener('mousedown', handleDocumentMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Computed: apply client-side filters
+  const maxPrice = maxPriceInput.trim() ? parseFloat(maxPriceInput) : null;
+  const visibleProfessionals = professionals.filter((p) => {
+    if (minRating != null && (p.averageRating ?? 0) < minRating) return false;
+    if (maxPrice != null && !isNaN(maxPrice) && p.sessionPrice.min > maxPrice) return false;
+    if (acceptingOnly && !p.isAcceptingClients) return false;
+    return true;
+  });
 
   function prepareSmartMatch(pros: ProfessionalResponseDTO[], ctx: string) {
     if (pros.length === 0) return;
@@ -106,9 +107,7 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
       const response = await fetch('/api/favorites');
       const payload = await response.json().catch(() => ({}));
       if (response.ok && Array.isArray(payload.professionalIds)) {
-        setFavoriteProfessionalIds(
-          new Set(payload.professionalIds as string[]),
-        );
+        setFavoriteProfessionalIds(new Set(payload.professionalIds as string[]));
       }
     } catch {
       /* ignore */
@@ -126,33 +125,14 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
       setSearchErrorMessage(null);
       if (!isInitialLoad) setIsSearchLoading(true);
 
-      const effectiveQuery =
-        queryOverride !== undefined ? queryOverride : query;
-      const effectiveCity =
-        locationOverrides?.city !== undefined
-          ? locationOverrides.city
-          : cityInput;
-      const effectiveState =
-        locationOverrides?.state !== undefined
-          ? locationOverrides.state
-          : stateInput;
-      const effectiveLatitude =
-        locationOverrides?.lat !== undefined
-          ? locationOverrides.lat
-          : latitude;
-      const effectiveLongitude =
-        locationOverrides?.lng !== undefined
-          ? locationOverrides.lng
-          : longitude;
-      const effectiveModalityFilter =
-        modalityFilterOverride !== undefined
-          ? modalityFilterOverride
-          : modalityFilter;
+      const effectiveQuery = queryOverride !== undefined ? queryOverride : query;
+      const effectiveCity = locationOverrides?.city !== undefined ? locationOverrides.city : cityInput;
+      const effectiveState = locationOverrides?.state !== undefined ? locationOverrides.state : stateInput;
+      const effectiveLatitude = locationOverrides?.lat !== undefined ? locationOverrides.lat : latitude;
+      const effectiveLongitude = locationOverrides?.lng !== undefined ? locationOverrides.lng : longitude;
+      const effectiveModalityFilter = modalityFilterOverride !== undefined ? modalityFilterOverride : modalityFilter;
 
-      const requestQuery = augmentQueryWithModalityFilter(
-        effectiveQuery,
-        effectiveModalityFilter,
-      );
+      const requestQuery = augmentQueryWithModalityFilter(effectiveQuery, effectiveModalityFilter);
 
       try {
         const response = await fetch('/api/professionals/search', {
@@ -162,8 +142,7 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
           body: JSON.stringify({
             query: requestQuery,
             city: effectiveCity.trim() || undefined,
-            state:
-              effectiveState.trim().toUpperCase().slice(0, 2) || undefined,
+            state: effectiveState.trim().toUpperCase().slice(0, 2) || undefined,
             lat: effectiveLatitude ?? undefined,
             lng: effectiveLongitude ?? undefined,
             radiusKm: SEARCH_RADIUS_KM,
@@ -174,11 +153,7 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          setSearchErrorMessage(
-            typeof payload.error === 'string'
-              ? payload.error
-              : 'Falha na busca.',
-          );
+          setSearchErrorMessage(typeof payload.error === 'string' ? payload.error : 'Falha na busca.');
           setProfessionals([]);
           setInterpretedSearch(null);
           return [];
@@ -186,9 +161,7 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
         const fetched: ProfessionalResponseDTO[] = Array.isArray(payload.data) ? payload.data : [];
         setInterpretedSearch(payload.interpreted ?? null);
         setProfessionals(fetched);
-        setTotalMatchCount(
-          typeof payload.total === 'number' ? payload.total : 0,
-        );
+        setTotalMatchCount(typeof payload.total === 'number' ? payload.total : 0);
         setHasCompletedAtLeastOneSearch(true);
         return fetched;
       } catch {
@@ -249,14 +222,8 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
 
   function handleSubmitSearch() {
     setLocationValidationError(null);
-    if (
-      modalityRequiresLocation(modalityFilter) &&
-      !cityInput.trim() &&
-      latitude == null
-    ) {
-      setLocationValidationError(
-        'Informe a cidade ou use a sua localização para buscar aulas presenciais.',
-      );
+    if (modalityRequiresLocation(modalityFilter) && !cityInput.trim() && latitude == null) {
+      setLocationValidationError('Informe a cidade ou use a sua localização para buscar aulas presenciais.');
       return;
     }
     void (async () => {
@@ -280,60 +247,45 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
     setIsGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude: coordsLatitude, longitude: coordsLongitude } =
-          position.coords;
-        setLatitude(coordsLatitude);
-        setLongitude(coordsLongitude);
+        const { latitude: coordsLat, longitude: coordsLng } = position.coords;
+        setLatitude(coordsLat);
+        setLongitude(coordsLng);
         setGeoHintMessage('Obtendo cidade...');
 
         let resolvedCity = cityInput;
         let resolvedState = stateInput;
         try {
-          const reverseGeocodeResponse = await fetch(
-            `/api/geocode/reverse?lat=${coordsLatitude}&lng=${coordsLongitude}`,
-          );
-          const geocodePayload: { city?: string; state?: string } =
-            await reverseGeocodeResponse.json().catch(() => ({}));
-          if (reverseGeocodeResponse.ok && geocodePayload.city) {
-            resolvedCity = geocodePayload.city;
-            resolvedState = geocodePayload.state ?? resolvedState;
+          const res = await fetch(`/api/geocode/reverse?lat=${coordsLat}&lng=${coordsLng}`);
+          const geo: { city?: string; state?: string } = await res.json().catch(() => ({}));
+          if (res.ok && geo.city) {
+            resolvedCity = geo.city;
+            resolvedState = geo.state ?? resolvedState;
             setCityInput(resolvedCity);
             setStateInput(resolvedState);
           }
-        } catch {
-          /* fallback: keep previous city/state */
-        }
+        } catch { /* fallback */ }
 
         setIsGeoLoading(false);
         setGeoHintMessage(
-          `${resolvedCity || 'Localização obtida'}${
-            resolvedState ? `, ${resolvedState}` : ''
-          }`,
+          `${resolvedCity || 'Localização obtida'}${resolvedState ? `, ${resolvedState}` : ''}`,
         );
         void (async () => {
           const fetched = await runProfessionalSearch(undefined, false, {
             city: resolvedCity,
             state: resolvedState,
-            lat: coordsLatitude,
-            lng: coordsLongitude,
+            lat: coordsLat,
+            lng: coordsLng,
           });
           if (fetched.length > 0) {
-            const ctx = [query, resolvedCity].filter(Boolean).join(' · ');
-            prepareSmartMatch(fetched, ctx);
+            prepareSmartMatch(fetched, [query, resolvedCity].filter(Boolean).join(' · '));
           }
         })();
       },
       () => {
         setIsGeoLoading(false);
-        setGeoHintMessage(
-          'Não foi possível obter a localização. Informe a cidade manualmente.',
-        );
+        setGeoHintMessage('Não foi possível obter a localização. Informe a cidade manualmente.');
       },
-      {
-        enableHighAccuracy: false,
-        maximumAge: GEOLOCATION_MAXIMUM_AGE_MS,
-        timeout: GEOLOCATION_TIMEOUT_MS,
-      },
+      { enableHighAccuracy: false, maximumAge: GEOLOCATION_MAXIMUM_AGE_MS, timeout: GEOLOCATION_TIMEOUT_MS },
     );
   }
 
@@ -347,24 +299,69 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) return;
-      setFavoriteProfessionalIds((previousIds) => {
-        const nextIds = new Set(previousIds);
-        if (payload.favorited) nextIds.add(professionalId);
-        else nextIds.delete(professionalId);
-        return nextIds;
+      setFavoriteProfessionalIds((prev) => {
+        const next = new Set(prev);
+        if (payload.favorited) next.add(professionalId);
+        else next.delete(professionalId);
+        return next;
       });
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }
 
-  const selectedModalityOption = MODALITY_MENU_OPTIONS.find(
-    (option) => option.value === modalityFilter,
-  );
-  const shouldShowLocationFields = modalityRequiresLocation(modalityFilter);
+  function handleClearFilters() {
+    setCityInput('');
+    setStateInput('');
+    setLatitude(null);
+    setLongitude(null);
+    setModalityFilter(null);
+    setMinRating(null);
+    setMaxPriceInput('');
+    setAcceptingOnly(false);
+    setGeoHintMessage(null);
+    setLocationValidationError(null);
+  }
+
+  const sharedSidebarProps = {
+    cityInput,
+    stateInput,
+    onCityChange: (v: string) => { setCityInput(v); setLocationValidationError(null); },
+    onStateChange: setStateInput,
+    isGeoLoading,
+    geoHint: geoHintMessage,
+    locationError: locationValidationError,
+    onUseMyLocation: handleUseMyLocation,
+    modalityFilter,
+    onModalityChange: (v: ModalityFilter) => {
+      setModalityFilter(v);
+      setLocationValidationError(null);
+      setFilterDrawerOpen(false);
+      void (async () => {
+        const fetched = await runProfessionalSearch(undefined, false, undefined, v);
+        if (fetched.length > 0) {
+          const ctx = [query, v ? v.replace('_', ' ') : '', cityInput].filter(Boolean).join(' · ');
+          prepareSmartMatch(fetched, ctx);
+        }
+      })();
+    },
+    minRating,
+    onMinRatingChange: setMinRating,
+    maxPrice: maxPriceInput,
+    onMaxPriceChange: setMaxPriceInput,
+    acceptingOnly,
+    onAcceptingOnlyChange: setAcceptingOnly,
+    onClear: handleClearFilters,
+  };
+
+  const activeFilterCount = [
+    modalityFilter !== null,
+    minRating !== null,
+    maxPriceInput.trim() !== '',
+    acceptingOnly,
+    cityInput.trim() !== '',
+  ].filter(Boolean).length;
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-50">
+    <main className="min-h-screen bg-slate-50">
       <SmartMatchModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -372,428 +369,228 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
         professionals={professionals}
         searchContext={searchContext}
       />
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-950 to-teal-900 px-4 pb-14 pt-16 text-center sm:px-6">
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          aria-hidden
-        >
-          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl" />
-          <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-600/5 blur-3xl" />
-        </div>
 
-        <div className="relative">
-          <h1 className="animate-fade-up delay-100 text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Encontre o profissional ideal
-            <br />
-            <span className="text-gradient-brand">
-              para transformar sua saúde
-            </span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-lg animate-fade-up delay-200 text-base text-slate-300 sm:text-lg">
-            Personal trainers, yoga, pilates, corrida, funcional e muito mais.
-            Conecte-se com os melhores profissionais do Brasil.
-          </p>
+      {/* Mobile filter drawer */}
+      <FilterSidebar
+        {...sharedSidebarProps}
+        isDrawer
+        isOpen={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+      />
 
-          <div className="mx-auto mt-8 max-w-2xl animate-fade-up delay-300">
-            <div className="flex rounded-2xl bg-white shadow-2xl shadow-black/30">
-              <div className="relative flex flex-1 items-center gap-3 rounded-l-2xl border-r border-slate-100 px-4">
-                <Search className="size-4 shrink-0 text-slate-400" aria-hidden />
-                <input
-                  ref={specialtySearchInputRef}
-                  value={query}
-                  onChange={(inputEvent) => {
-                    setQuery(inputEvent.target.value);
-                    setActiveSpecialtyValue(null);
-                  }}
-                  onKeyDown={(keyboardEvent) =>
-                    keyboardEvent.key === 'Enter' && handleSubmitSearch()
-                  }
-                  placeholder="Ex.: Personal trainer, pilates, yoga…"
-                  className="flex-1 py-4 text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  aria-label="Especialidade"
-                />
-                {query ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery('');
-                      setActiveSpecialtyValue(null);
-                    }}
-                    className="shrink-0 text-slate-300 hover:text-slate-500"
-                  >
-                    <X className="size-4" aria-hidden />
-                  </button>
-                ) : null}
-              </div>
-
-              <div className="relative" ref={modalityMenuContainerRef}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setIsModalityMenuOpen((wasOpen) => !wasOpen)
-                  }
-                  className="flex h-full items-center gap-2 border-r border-slate-100 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-                  aria-haspopup="listbox"
-                  aria-expanded={isModalityMenuOpen}
-                >
-                  {selectedModalityOption ? (
-                    <>
-                      <selectedModalityOption.icon
-                        className="size-4 shrink-0 text-emerald-600"
-                        aria-hidden
-                      />
-                      <span className="hidden sm:inline">
-                        {selectedModalityOption.label}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin
-                        className="size-4 shrink-0 text-slate-400"
-                        aria-hidden
-                      />
-                      <span className="hidden text-slate-400 sm:inline">
-                        Tipo de aula
-                      </span>
-                    </>
-                  )}
-                  <ChevronDown
-                    className={`size-3.5 text-slate-400 transition-transform ${
-                      isModalityMenuOpen ? 'rotate-180' : ''
-                    }`}
-                    aria-hidden
-                  />
-                </button>
-
-                {isModalityMenuOpen ? (
-                  <div className="header-dropdown-panel absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-lg">
-                    {modalityFilter ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setModalityFilter(null);
-                          setIsModalityMenuOpen(false);
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-slate-400 hover:bg-slate-50"
-                      >
-                        <X className="size-3.5" aria-hidden />
-                        Qualquer modalidade
-                      </button>
-                    ) : null}
-                    {MODALITY_MENU_OPTIONS.map((modalityOption) => {
-                      const ModalityIcon = modalityOption.icon;
-                      const isOptionSelected =
-                        modalityFilter === modalityOption.value;
-                      return (
-                        <button
-                          key={modalityOption.value}
-                          type="button"
-                          role="option"
-                          aria-selected={isOptionSelected}
-                          onClick={() => {
-                            setModalityFilter(modalityOption.value);
-                            setIsModalityMenuOpen(false);
-                            setLocationValidationError(null);
-                          }}
-                          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
-                            isOptionSelected ? 'bg-emerald-50' : ''
-                          }`}
-                        >
-                          <ModalityIcon
-                            className={`mt-0.5 size-4 shrink-0 ${
-                              isOptionSelected
-                                ? 'text-emerald-600'
-                                : 'text-slate-400'
-                            }`}
-                            aria-hidden
-                          />
-                          <div>
-                            <p
-                              className={`text-sm font-semibold ${
-                                isOptionSelected
-                                  ? 'text-emerald-700'
-                                  : 'text-slate-700'
-                              }`}
-                            >
-                              {modalityOption.label}
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                              {modalityOption.description}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-
+      {/* Sticky search bar */}
+      <div className="sticky top-[57px] z-30 border-b border-slate-100 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1320px] items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6 lg:px-10">
+          <div className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-1 focus-within:ring-emerald-100">
+            <Search className="size-4 shrink-0 text-slate-400" aria-hidden />
+            <input
+              ref={specialtySearchInputRef}
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setActiveSpecialtyValue(null); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmitSearch()}
+              placeholder="Especialidade, objetivo ou modalidade…"
+              className="flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              aria-label="Buscar profissionais"
+            />
+            {query ? (
               <button
                 type="button"
-                disabled={isSearchLoading}
-                onClick={handleSubmitSearch}
-                className="flex shrink-0 items-center gap-2 rounded-r-2xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                onClick={() => { setQuery(''); setActiveSpecialtyValue(null); }}
+                className="shrink-0 text-slate-300 hover:text-slate-500"
+                aria-label="Limpar busca"
               >
-                {isSearchLoading ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <Search className="size-4" aria-hidden />
-                )}
-                <span className="hidden sm:inline">Buscar</span>
+                <X className="size-3.5" aria-hidden />
               </button>
+            ) : (
+              <kbd className="hidden select-none items-center gap-0.5 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:flex">
+                <span className="text-[11px]">⌘</span>K
+              </kbd>
+            )}
+          </div>
+
+          {/* Mobile: filter button */}
+          <button
+            type="button"
+            onClick={() => setFilterDrawerOpen(true)}
+            className="relative flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 lg:hidden"
+          >
+            <SlidersHorizontal className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Filtros</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            disabled={isSearchLoading}
+            onClick={handleSubmitSearch}
+            className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {isSearchLoading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Search className="size-4" aria-hidden />
+            )}
+            <span className="hidden sm:inline">Buscar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Page content */}
+      <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 lg:px-10">
+        <div className="flex gap-7 lg:gap-8">
+
+          {/* Desktop sidebar */}
+          <aside className="hidden w-[260px] shrink-0 lg:block">
+            <div className="sticky top-[116px]">
+              <FilterSidebar {...sharedSidebarProps} />
             </div>
+          </aside>
 
-            {shouldShowLocationFields ? (
-              <div className="mt-3 overflow-hidden rounded-2xl bg-white/95 px-4 py-3 shadow-lg shadow-black/10">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                  <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
-                    <MapPin
-                      className="size-4 shrink-0 text-slate-400"
-                      aria-hidden
-                    />
-                    <input
-                      value={cityInput}
-                      onChange={(inputEvent) => {
-                        setCityInput(inputEvent.target.value);
-                        setLocationValidationError(null);
-                      }}
-                      placeholder="Cidade"
-                      className="flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                    />
-                    <input
-                      value={stateInput}
-                      onChange={(inputEvent) =>
-                        setStateInput(
-                          inputEvent.target.value.toUpperCase().slice(0, 2),
-                        )
-                      }
-                      placeholder="UF"
-                      maxLength={2}
-                      className="w-10 bg-transparent text-center text-sm uppercase text-slate-900 outline-none placeholder:text-slate-400"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleUseMyLocation}
-                    disabled={isGeoLoading}
-                    className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-60"
-                  >
-                    {isGeoLoading ? (
-                      <Loader2
-                        className="size-4 animate-spin text-emerald-600"
-                        aria-hidden
-                      />
-                    ) : (
-                      <Navigation
-                        className="size-4 text-emerald-600"
-                        aria-hidden
-                      />
-                    )}
-                    {isGeoLoading ? 'Localizando…' : 'Usar minha localização'}
-                  </button>
-                </div>
-                {locationValidationError ? (
-                  <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-600">
-                    <X className="size-3.5" aria-hidden />{' '}
-                    {locationValidationError}
-                  </p>
-                ) : null}
-                {geoHintMessage && !locationValidationError ? (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600">
-                    <Navigation className="size-3" aria-hidden />{' '}
-                    {geoHintMessage}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
+          {/* Results column */}
+          <div className="min-w-0 flex-1">
 
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {SPECIALTY_CHIP_CONFIGS.map((chipConfig) => {
-                const ChipIcon = chipConfig.icon;
-                const isChipActive = activeSpecialtyValue === chipConfig.value;
+            {/* Specialty chips */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {SPECIALTY_CHIP_CONFIGS.map((chip) => {
+                const ChipIcon = chip.icon;
+                const isActive = activeSpecialtyValue === chip.value;
                 return (
                   <button
-                    key={chipConfig.value}
+                    key={chip.value}
                     type="button"
-                    onClick={() => handleSpecialtyChipClick(chipConfig.value)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-                      isChipActive
-                        ? 'border-white bg-white text-emerald-700 shadow'
-                        : 'border-white/30 bg-white/10 text-white hover:border-white/50 hover:bg-white/20'
+                    onClick={() => handleSpecialtyChipClick(chip.value)}
+                    className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
+                      isActive
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-700'
                     }`}
                   >
                     <ChipIcon className="size-3" aria-hidden />
-                    {chipConfig.label}
+                    {chip.label}
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          <div className="mx-auto mt-10 flex max-w-lg flex-wrap items-center justify-center gap-x-8 gap-y-3 animate-fade-up delay-400">
-            <div className="flex items-center gap-2 text-white/80">
-              <Users className="size-4 text-emerald-400" aria-hidden />
-              <span className="text-sm">
-                <strong className="font-bold text-white">50+</strong>{' '}
-                profissionais
-              </span>
-            </div>
-            <div className="hidden h-3 w-px bg-white/20 sm:block" aria-hidden />
-            <div className="flex items-center gap-2 text-white/80">
-              <Activity className="size-4 text-emerald-400" aria-hidden />
-              <span className="text-sm">
-                <strong className="font-bold text-white">12</strong> modalidades
-              </span>
-            </div>
-            <div className="hidden h-3 w-px bg-white/20 sm:block" aria-hidden />
-            <div className="flex items-center gap-2 text-white/80">
-              <Star
-                className="size-4 fill-amber-400 text-amber-400"
-                aria-hidden
-              />
-              <span className="text-sm">
-                <strong className="font-bold text-white">4.9</strong> avaliação
-                média
-              </span>
-            </div>
+            {/* Results header */}
+            {!isInitialSearchLoading && hasCompletedAtLeastOneSearch && totalMatchCount > 0 && (
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {visibleProfessionals.length !== totalMatchCount
+                      ? `${visibleProfessionals.length} de ${totalMatchCount} profissional${totalMatchCount !== 1 ? 'is' : ''}`
+                      : `${totalMatchCount} profissional${totalMatchCount !== 1 ? 'is' : ''} encontrado${totalMatchCount !== 1 ? 's' : ''}`
+                    }
+                  </p>
+                  {interpretedSearch?.summary && (
+                    <p className="mt-0.5 text-xs text-slate-400 italic">{interpretedSearch.summary}</p>
+                  )}
+                </div>
+                {smartMatchIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(true)}
+                    className="flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+                  >
+                    <Sparkles className="size-3.5" aria-hidden />
+                    Melhores para você
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Error */}
+            {searchErrorMessage && (
+              <div
+                className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                role="alert"
+              >
+                {searchErrorMessage}
+              </div>
+            )}
+
+            {/* Skeleton */}
+            {isInitialSearchLoading && (
+              <ul className="flex flex-col gap-4">
+                {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+                  <DiscoverCardSkeleton key={i} />
+                ))}
+              </ul>
+            )}
+
+            {/* Results list */}
+            {!isInitialSearchLoading && visibleProfessionals.length > 0 && (
+              <ul className="flex flex-col gap-4">
+                {visibleProfessionals.map((professional, cardIndex) => (
+                  <DiscoverProfessionalCard
+                    key={professional.id}
+                    professional={professional}
+                    cardIndex={cardIndex}
+                    isFavorite={favoriteProfessionalIds.has(professional.id)}
+                    onToggleFavorite={(id) => void toggleFavoriteProfessional(id)}
+                  />
+                ))}
+              </ul>
+            )}
+
+            {/* Empty state */}
+            {!isInitialSearchLoading && professionals.length === 0 && hasCompletedAtLeastOneSearch && (
+              <div className="flex flex-col items-center gap-5 rounded-xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                  <Search className="size-7" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-900">Nenhum profissional encontrado</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+                    {modalityRequiresLocation(modalityFilter)
+                      ? 'Tente ampliar a cidade ou mudar a modalidade para Online.'
+                      : 'Tente mudar a especialidade ou escolher outra modalidade.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const matchingChip = SPECIALTY_CHIP_CONFIGS.find(
+                      (c) => c.value.toLowerCase() === query.trim().toLowerCase(),
+                    );
+                    if (matchingChip) {
+                      const params = new URLSearchParams();
+                      if (modalityFilter) params.set('modality', modalityFilter);
+                      router.push(`/profissionais/${matchingChip.slug}${params.size > 0 ? `?${params.toString()}` : ''}`);
+                    } else {
+                      const params = new URLSearchParams();
+                      if (query.trim()) params.set('q', query.trim());
+                      if (modalityFilter) params.set('modality', modalityFilter);
+                      router.push(`/profissionais${params.size > 0 ? `?${params.toString()}` : ''}`);
+                    }
+                  }}
+                  className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Ver todos os profissionais
+                </button>
+              </div>
+            )}
+
+            {/* Filtered empty state (results exist but all filtered out) */}
+            {!isInitialSearchLoading && professionals.length > 0 && visibleProfessionals.length === 0 && (
+              <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
+                <p className="text-sm font-semibold text-slate-900">Nenhum resultado com os filtros atuais</p>
+                <p className="text-xs text-slate-500">Tente ajustar o preço máximo, a avaliação mínima ou remover o filtro de disponibilidade.</p>
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-        {interpretedSearch?.summary ? (
-          <p className="mb-5 text-sm italic text-slate-500">
-            {interpretedSearch.summary}
-          </p>
-        ) : null}
-
-        {searchErrorMessage ? (
-          <div
-            className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
-            role="alert"
-          >
-            {searchErrorMessage}
-          </div>
-        ) : null}
-
-        {!isInitialSearchLoading &&
-        hasCompletedAtLeastOneSearch &&
-        totalMatchCount > 0 ? (
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <p className="text-base font-bold text-slate-900">
-                {totalMatchCount} profissional
-                {totalMatchCount !== 1 ? 'is' : ''} encontrado
-                {totalMatchCount !== 1 ? 's' : ''}
-              </p>
-              {modalityFilter && selectedModalityOption ? (
-                <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
-                  <selectedModalityOption.icon
-                    className="size-3.5"
-                    aria-hidden
-                  />
-                  {selectedModalityOption.label}
-                </p>
-              ) : null}
-            </div>
-            {smartMatchIds.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowModal(true)}
-                className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
-              >
-                <Sparkles className="size-3.5" aria-hidden />
-                Melhores para você
-              </button>
-            )}
-          </div>
-        ) : null}
-
-        {isInitialSearchLoading ? (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: SKELETON_CARD_COUNT }).map(
-              (_, skeletonIndex) => (
-                <DiscoverCardSkeleton key={skeletonIndex} />
-              ),
-            )}
-          </ul>
-        ) : null}
-
-        {!isInitialSearchLoading && professionals.length > 0 ? (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {professionals.slice(0, 6).map((professional, cardIndex) => (
-              <DiscoverProfessionalCard
-                key={professional.id}
-                professional={professional}
-                cardIndex={cardIndex}
-                isFavorite={favoriteProfessionalIds.has(professional.id)}
-                onToggleFavorite={(professionalId) =>
-                  void toggleFavoriteProfessional(professionalId)
-                }
-              />
-            ))}
-
-
-            {professionals.slice(6).map((professional, cardIndex) => (
-              <DiscoverProfessionalCard
-                key={professional.id}
-                professional={professional}
-                cardIndex={cardIndex + 6}
-                isFavorite={favoriteProfessionalIds.has(professional.id)}
-                onToggleFavorite={(professionalId) =>
-                  void toggleFavoriteProfessional(professionalId)
-                }
-              />
-            ))}
-          </ul>
-        ) : null}
-
-        {!isInitialSearchLoading &&
-        professionals.length === 0 &&
-        hasCompletedAtLeastOneSearch ? (
-          <div className="flex flex-col items-center gap-5 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-20 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-              <Search className="size-9" aria-hidden />
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-slate-900">
-                Nenhum profissional encontrado
-              </p>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                {shouldShowLocationFields
-                  ? 'Tente ampliar a cidade ou mudar a modalidade para Online.'
-                  : 'Tente mudar a especialidade ou escolher outra modalidade.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const matchingChip = SPECIALTY_CHIP_CONFIGS.find(
-                  (c) => c.value.toLowerCase() === query.trim().toLowerCase(),
-                );
-                if (matchingChip) {
-                  const params = new URLSearchParams();
-                  if (modalityFilter) params.set('modality', modalityFilter);
-                  router.push(
-                    `/profissionais/${matchingChip.slug}${params.size > 0 ? `?${params.toString()}` : ''}`,
-                  );
-                } else {
-                  const params = new URLSearchParams();
-                  if (query.trim()) params.set('q', query.trim());
-                  if (modalityFilter) params.set('modality', modalityFilter);
-                  router.push(
-                    `/profissionais${params.size > 0 ? `?${params.toString()}` : ''}`,
-                  );
-                }
-              }}
-              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
-            >
-              Ver todos os profissionais
-            </button>
-          </div>
-        ) : null}
-
       </div>
     </main>
   );
