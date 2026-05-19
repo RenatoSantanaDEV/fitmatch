@@ -11,6 +11,7 @@ import {
   StudentProfileRequiredError,
 } from '../../../domain/errors/ChatErrors';
 import { Conversation } from '../../../domain/entities/Conversation';
+import { resolveAvatarUrl } from '../../../lib/resolveAvatarUrl';
 
 export interface StartConversationInput {
   userId: string;
@@ -56,7 +57,7 @@ export class StartConversationUseCase {
     return toDTO(conversation, 'STUDENT', {
       userId: professional.userId,
       name: counterpart?.name ?? '',
-      avatarUrl: counterpart?.avatarUrl ?? null,
+      avatarUrl: resolveAvatarUrl(professional.userId, counterpart?.avatarUrl ?? null),
       role: 'PROFESSIONAL',
     });
   }

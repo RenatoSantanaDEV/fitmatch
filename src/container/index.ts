@@ -33,6 +33,7 @@ import { MarkConversationReadUseCase } from '../application/use-cases/chat/MarkC
 import { SetConversationStatusUseCase } from '../application/use-cases/chat/SetConversationStatusUseCase';
 import { GetUnreadSummaryUseCase } from '../application/use-cases/chat/GetUnreadSummaryUseCase';
 import { AuthorizeConversationAccessUseCase } from '../application/use-cases/chat/AuthorizeConversationAccessUseCase';
+import { GetCounterpartDetailsUseCase } from '../application/use-cases/chat/GetCounterpartDetailsUseCase';
 
 const prisma = getPrismaClient();
 
@@ -150,4 +151,11 @@ export const authorizeConversationAccessUseCase = new AuthorizeConversationAcces
   conversationRepo,
   studentRepo,
   professionalRepo,
+);
+
+export const getCounterpartDetailsUseCase = new GetCounterpartDetailsUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+  userRepo,
 );

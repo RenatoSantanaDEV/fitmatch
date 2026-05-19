@@ -9,6 +9,7 @@ import {
 } from '../../../domain/errors/ChatErrors';
 import { roleOfParticipant } from '../../../domain/rules/chatRules';
 import { resolveRequester } from './resolveRequester';
+import { resolveAvatarUrl } from '../../../lib/resolveAvatarUrl';
 
 export interface GetConversationInput {
   userId: string;
@@ -66,7 +67,7 @@ export class GetConversationUseCase {
       counterpart: {
         userId: counterpartUserId,
         name: counterpart?.name ?? '',
-        avatarUrl: counterpart?.avatarUrl ?? null,
+        avatarUrl: resolveAvatarUrl(counterpartUserId, counterpart?.avatarUrl ?? null),
         role: counterpartRole,
       },
       createdAt: conversation.createdAt.toISOString(),

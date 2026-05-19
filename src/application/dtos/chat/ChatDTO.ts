@@ -53,3 +53,51 @@ export interface MessageListDTO {
   items: MessageDTO[];
   hasMore: boolean;
 }
+
+export interface CounterpartLocationDTO {
+  city: string | null;
+  state: string | null;
+}
+
+export interface CounterpartPriceDTO {
+  min: number;
+  max: number;
+  currency: string;
+}
+
+export interface StudentCounterpartDetailsDTO {
+  role: 'STUDENT';
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  fitnessGoals: string[];
+  experienceLevel: string;
+  preferredModality: string;
+  preferredSpecializations: string[];
+  preferredLocation: CounterpartLocationDTO | null;
+  budgetRange: CounterpartPriceDTO | null;
+}
+
+export interface ProfessionalCounterpartDetailsDTO {
+  role: 'PROFESSIONAL';
+  userId: string;
+  professionalId: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string;
+  areas: { id: string; nome: string }[];
+  modalities: string[];
+  yearsExperience: number;
+  averageRating: number | null;
+  totalReviews: number;
+  isVerified: boolean;
+  sessionPrice: CounterpartPriceDTO;
+  location: CounterpartLocationDTO;
+  classDynamics: string | null;
+  sessionDurationMinutes: number | null;
+}
+
+export type CounterpartDetailsDTO =
+  | StudentCounterpartDetailsDTO
+  | ProfessionalCounterpartDetailsDTO;

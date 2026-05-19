@@ -11,6 +11,7 @@ import { Conversation } from '../../../domain/entities/Conversation';
 import { ConversationStatus } from '../../../domain/enums/ConversationStatus';
 import { ParticipantRole, recipientRoleOf } from '../../../domain/rules/chatRules';
 import { ConversationMapper } from '../mappers/ConversationMapper';
+import { resolveAvatarUrl } from '../../../lib/resolveAvatarUrl';
 
 export class PrismaConversationRepository implements IConversationRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -123,7 +124,7 @@ export class PrismaConversationRepository implements IConversationRepository {
         counterpart: {
           userId: counterpartUserId,
           name: userInfo?.name ?? '',
-          avatarUrl: userInfo?.avatarUrl ?? null,
+          avatarUrl: resolveAvatarUrl(counterpartUserId, userInfo?.avatarUrl ?? null),
           role: counterpartRole,
         },
         unreadForRequester: isStudentSide ? row.studentUnread : row.professionalUnread,
