@@ -5,3 +5,4 @@ export { SpecializationType } from './SpecializationType';
 export { SessionModality } from './SessionModality';
 export { AvailabilityRecurrence } from './AvailabilityRecurrence';
 export { ExperienceLevel } from './ExperienceLevel';
+export { ConversationStatus } from './ConversationStatus';

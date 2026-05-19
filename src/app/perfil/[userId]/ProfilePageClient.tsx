@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   ArrowLeft,
@@ -9,7 +10,9 @@ import {
   Clock,
   GraduationCap,
   Heart,
+  Loader2,
   MapPin,
+  MessageCircle,
   Monitor,
   Share2,
   Shield,
@@ -185,9 +188,12 @@ export function ProfilePageClient({
   isFavorited: boolean;
   isOwnProfile: boolean;
 }) {
+  const router = useRouter();
   const [isFav, setIsFav] = useState(initialFavorited);
   const [favLoading, setFavLoading] = useState(false);
   const [compatOpen, setCompatOpen] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   const initials = getInitials(data.displayName);
   const priceLabel = formatMoney(
@@ -213,6 +219,35 @@ export function ProfilePageClient({
       if (res.ok) setIsFav(Boolean(body.favorited));
     } catch { /* ignore */ } finally {
       setFavLoading(false);
+    }
+  }
+
+  async function handleContact() {
+    if (contactLoading) return;
+    setContactLoading(true);
+    setContactError(null);
+    try {
+      const res = await fetch('/api/chat/conversations', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ professionalId: data.id }),
+      });
+      if (res.status === 401) {
+        router.push(`/?auth=login&callbackUrl=${encodeURIComponent(`/perfil/${data.userId}`)}`);
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setContactError(typeof body?.error === 'string' ? body.error : 'Não foi possível iniciar a conversa.');
+        return;
+      }
+      const conversationId = (body as { id?: string }).id;
+      if (conversationId) router.push(`/mensagens?c=${conversationId}`);
+    } catch {
+      setContactError('Erro de conexão. Tente novamente.');
+    } finally {
+      setContactLoading(false);
     }
   }
 
@@ -632,12 +667,22 @@ export function ProfilePageClient({
                 </Link>
               ) : (
                 <>
-                  <Link
-                    href="/descobrir"
-                    className="block w-full rounded-full bg-emerald-600 px-4 py-3.5 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
+                  <button
+                    type="button"
+                    onClick={() => void handleContact()}
+                    disabled={contactLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-center text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
+                    {contactLoading ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <MessageCircle className="size-4" aria-hidden />
+                    )}
                     Entrar em contato
-                  </Link>
+                  </button>
+                  {contactError && (
+                    <p className="mt-2 text-center text-xs text-rose-600">{contactError}</p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setCompatOpen(true)}
@@ -687,12 +732,19 @@ export function ProfilePageClient({
               Editar perfil
             </Link>
           ) : (
-            <Link
-              href="/descobrir"
-              className="flex-1 rounded-full bg-emerald-600 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
+            <button
+              type="button"
+              onClick={() => void handleContact()}
+              disabled={contactLoading}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-600 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
+              {contactLoading ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <MessageCircle className="size-4" aria-hidden />
+              )}
               Entrar em contato
-            </Link>
+            </button>
           )}
           {!isOwnProfile && (
             <button

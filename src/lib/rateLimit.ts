@@ -2,6 +2,15 @@ type Entry = { count: number; resetAt: number };
 
 const store = new Map<string, Entry>();
 
+// Purge expired entries to prevent unbounded memory growth in long-running processes.
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (now >= entry.resetAt) store.delete(key);
+  }
+}, CLEANUP_INTERVAL_MS).unref?.();
+
 export function checkRateLimit(
   key: string,
   limit: number,

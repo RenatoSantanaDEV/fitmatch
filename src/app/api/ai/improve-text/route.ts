@@ -60,12 +60,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { text?: string; type?: string; name?: string };
-  const { text, type, name } = body;
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const text = typeof body.text === 'string' ? body.text : '';
+  const type = typeof body.type === 'string' ? body.type : undefined;
+  const name = typeof body.name === 'string' ? body.name.slice(0, 100).replace(/[\r\n]/g, ' ') : undefined;
 
-  if (!text || typeof text !== 'string' || text.trim().length < 20) {
+  if (!text || text.trim().length < 20) {
     return NextResponse.json(
       { error: 'Texto muito curto para melhorar. Escreva pelo menos 20 caracteres.' },
+      { status: 400 },
+    );
+  }
+  if (text.length > 3000) {
+    return NextResponse.json(
+      { error: 'Texto muito longo. O limite é 3000 caracteres.' },
       { status: 400 },
     );
   }

@@ -2,7 +2,8 @@ import { type NextRequest } from 'next/server';
 import { auth } from '../../../../lib/auth';
 import { studentRepo, professionalRepo } from '../../../../container';
 import { MatchingAdapterFactory } from '../../../../infrastructure/ai/MatchingAdapterFactory';
-import { ok, unauthorized, badRequest, handleError } from '../../../../lib/apiResponse';
+import { ok, unauthorized, badRequest, handleError, tooManyRequests } from '../../../../lib/apiResponse';
+import { checkRateLimit } from '../../../../lib/rateLimit';
 import type { MatchingCandidate, MatchingStudent } from '../../../../application/ports/output/IMatchingPort';
 import type { Student } from '../../../../domain/entities/Student';
 import type { Professional } from '../../../../domain/entities/Professional';
@@ -11,6 +12,8 @@ import { SessionModality } from '../../../../domain/enums/SessionModality';
 
 const MAX_IDS = 20;
 const MAX_RESULTS = 5;
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 interface FormOverride {
   mainGoal?: string;
@@ -37,6 +40,14 @@ const MODALITY_MAP: Record<string, SessionModality> = {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
+
+  const rateLimit = checkRateLimit(`rank:${session.user.id}`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!rateLimit.ok) {
+    return tooManyRequests(
+      rateLimit.retryAfter,
+      `Limite de ranking atingido. Tente novamente em ${Math.ceil(rateLimit.retryAfter / 60)} minuto(s).`,
+    );
+  }
 
   let body: { professionalIds?: unknown; formData?: FormOverride };
   try {
@@ -94,7 +105,8 @@ function applyFormOverride(base: MatchingStudent, form?: FormOverride): Matching
     overrides.preferredModality = MODALITY_MAP[form.preferredModality];
   }
   if (form.restrictions) {
-    overrides.bio = form.restrictions;
+    const existing = base.bio ? `${base.bio}\n\nRestrições: ${form.restrictions}` : form.restrictions;
+    overrides.bio = existing;
   }
 
   return { ...base, ...overrides };

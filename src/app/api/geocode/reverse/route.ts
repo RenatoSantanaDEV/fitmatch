@@ -4,11 +4,14 @@ export async function GET(req: NextRequest) {
   const lat = req.nextUrl.searchParams.get('lat');
   const lng = req.nextUrl.searchParams.get('lng');
 
-  if (!lat || !lng || isNaN(Number(lat)) || isNaN(Number(lng))) {
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+  if (!lat || !lng || !Number.isFinite(latNum) || !Number.isFinite(lngNum) ||
+      latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
     return NextResponse.json({ error: 'lat e lng são obrigatórios.' }, { status: 400 });
   }
 
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latNum}&lon=${lngNum}&addressdetails=1`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'FitConnect-TCC/1.0' },
   }).catch(() => null);

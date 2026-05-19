@@ -6,6 +6,7 @@ import {
   Heart,
   Loader2,
   LogOut,
+  MessageCircle,
   Search,
   User,
   ChevronDown,
@@ -14,12 +15,44 @@ import { signOut, useSession } from 'next-auth/react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthModal } from '../auth/AuthModalContext';
 
+const UNREAD_POLL_INTERVAL_MS = 30_000;
+
 export function SiteHeader() {
   const { openLogin, openRegister } = useAuthModal();
   const { data: session, status } = useSession();
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setUnreadCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const res = await fetch('/api/chat/conversations?summary=1', {
+          credentials: 'include',
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { totalUnread?: number };
+        if (!cancelled) setUnreadCount(data.totalUnread ?? 0);
+      } catch {
+        /* ignore */
+      }
+    };
+    void refresh();
+    const id = setInterval(() => void refresh(), UNREAD_POLL_INTERVAL_MS);
+    const onFocus = () => void refresh();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [status]);
 
   const initial =
     (session?.user?.name?.trim()?.charAt(0) || session?.user?.email?.charAt(0) || '?').toUpperCase();
@@ -80,6 +113,19 @@ export function SiteHeader() {
                   <span className="hidden lg:inline">Buscar</span>
                 </Link>
                 <Link
+                  href="/mensagens"
+                  className="header-icon-btn relative flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
+                  title="Mensagens"
+                >
+                  <MessageCircle className="size-4" strokeWidth={2} aria-hidden />
+                  <span className="hidden lg:inline">Mensagens</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
                   href="/descobrir"
                   className="header-icon-btn flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-rose-50 hover:text-rose-600"
                   title="Favoritos"
@@ -99,6 +145,18 @@ export function SiteHeader() {
               <div className="flex items-center gap-0.5 sm:hidden">
                 <Link href="/descobrir" className="header-icon-btn flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-emerald-700">
                   <Search className="size-4" aria-hidden />
+                </Link>
+                <Link
+                  href="/mensagens"
+                  className="header-icon-btn relative flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
+                  title="Mensagens"
+                >
+                  <MessageCircle className="size-4" aria-hidden />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
               </div>
 
@@ -142,6 +200,17 @@ export function SiteHeader() {
                     </div>
 
                     <div className="py-1">
+                      <Link href="/mensagens" role="menuitem" className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
+                        <span className="flex items-center gap-3">
+                          <MessageCircle className="size-4 shrink-0 text-emerald-600" aria-hidden />
+                          Mensagens
+                        </span>
+                        {unreadCount > 0 && (
+                          <span className="rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
+                      </Link>
                       <Link href="/descobrir" role="menuitem" className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
                         <Heart className="size-4 shrink-0 text-rose-500" aria-hidden />
                         Favoritos

@@ -21,6 +21,18 @@ import { SubmitReviewUseCase } from '../application/use-cases/review/SubmitRevie
 import { ListProfessionalsUseCase } from '../application/use-cases/professional/ListProfessionalsUseCase';
 import { SearchProfessionalsWithAiUseCase } from '../application/use-cases/professional/SearchProfessionalsWithAiUseCase';
 import { PrismaStudentFavoriteRepository } from '../infrastructure/db/repositories/PrismaStudentFavoriteRepository';
+import { PrismaConversationRepository } from '../infrastructure/db/repositories/PrismaConversationRepository';
+import { PrismaMessageRepository } from '../infrastructure/db/repositories/PrismaMessageRepository';
+import { PgNotifyChatAdapter } from '../infrastructure/realtime/PgNotifyChatAdapter';
+import { StartConversationUseCase } from '../application/use-cases/chat/StartConversationUseCase';
+import { SendMessageUseCase } from '../application/use-cases/chat/SendMessageUseCase';
+import { ListConversationsUseCase } from '../application/use-cases/chat/ListConversationsUseCase';
+import { GetConversationUseCase } from '../application/use-cases/chat/GetConversationUseCase';
+import { ListMessagesUseCase } from '../application/use-cases/chat/ListMessagesUseCase';
+import { MarkConversationReadUseCase } from '../application/use-cases/chat/MarkConversationReadUseCase';
+import { SetConversationStatusUseCase } from '../application/use-cases/chat/SetConversationStatusUseCase';
+import { GetUnreadSummaryUseCase } from '../application/use-cases/chat/GetUnreadSummaryUseCase';
+import { AuthorizeConversationAccessUseCase } from '../application/use-cases/chat/AuthorizeConversationAccessUseCase';
 
 const prisma = getPrismaClient();
 
@@ -32,6 +44,9 @@ const matchRepo = new PrismaMatchRepository(prisma);
 const sessionRepo = new PrismaSessionRepository(prisma);
 const reviewRepo = new PrismaReviewRepository(prisma);
 export const studentFavoriteRepo = new PrismaStudentFavoriteRepository(prisma);
+const conversationRepo = new PrismaConversationRepository(prisma);
+const messageRepo = new PrismaMessageRepository(prisma);
+const chatRealtimePort = new PgNotifyChatAdapter(prisma);
 const matchingAdapter = MatchingAdapterFactory.create();
 const notificationAdapter = new NoopNotificationAdapter();
 
@@ -75,4 +90,64 @@ export const listProfessionalsUseCase = new ListProfessionalsUseCase(professiona
 
 export const searchProfessionalsWithAiUseCase = new SearchProfessionalsWithAiUseCase(
   listProfessionalsUseCase,
+);
+
+export const startConversationUseCase = new StartConversationUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+  matchRepo,
+  userRepo,
+);
+
+export const sendMessageUseCase = new SendMessageUseCase(
+  conversationRepo,
+  messageRepo,
+  studentRepo,
+  professionalRepo,
+  chatRealtimePort,
+);
+
+export const listConversationsUseCase = new ListConversationsUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+);
+
+export const getConversationUseCase = new GetConversationUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+  userRepo,
+);
+
+export const listMessagesUseCase = new ListMessagesUseCase(
+  conversationRepo,
+  messageRepo,
+  studentRepo,
+  professionalRepo,
+);
+
+export const markConversationReadUseCase = new MarkConversationReadUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+);
+
+export const setConversationStatusUseCase = new SetConversationStatusUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+);
+
+export const getUnreadSummaryUseCase = new GetUnreadSummaryUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
+);
+
+export const authorizeConversationAccessUseCase = new AuthorizeConversationAccessUseCase(
+  conversationRepo,
+  studentRepo,
+  professionalRepo,
 );

@@ -7,3 +7,5 @@ export type { Availability } from './Availability';
 export type { Match } from './Match';
 export type { Session } from './Session';
 export type { Review } from './Review';
+export type { Conversation } from './Conversation';
+export type { Message } from './Message';
