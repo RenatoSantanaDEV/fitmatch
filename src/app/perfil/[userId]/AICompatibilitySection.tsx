@@ -30,8 +30,8 @@ const LOADING_MESSAGES = [
 ];
 
 function getScoreStyle(score: number) {
-  if (score >= 85) return { text: 'text-emerald-600', stroke: 'stroke-emerald-500', bg: 'bg-emerald-50', pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: 'Excelente compatibilidade' };
-  if (score >= 70) return { text: 'text-blue-600', stroke: 'stroke-blue-500', bg: 'bg-blue-50', pill: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Boa compatibilidade' };
+  if (score >= 80) return { text: 'text-emerald-600', stroke: 'stroke-emerald-500', bg: 'bg-emerald-50', pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: 'Excelente compatibilidade' };
+  if (score >= 65) return { text: 'text-blue-600', stroke: 'stroke-blue-500', bg: 'bg-blue-50', pill: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Boa compatibilidade' };
   if (score >= 50) return { text: 'text-amber-600', stroke: 'stroke-amber-500', bg: 'bg-amber-50', pill: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Compatibilidade moderada' };
   return { text: 'text-rose-600', stroke: 'stroke-rose-500', bg: 'bg-rose-50', pill: 'bg-rose-100 text-rose-700 border-rose-200', label: 'Baixa compatibilidade' };
 }
@@ -98,7 +98,6 @@ export function AICompatibilitySection({
 }) {
   const [step, setStep] = useState<Step>('idle');
   const [form, setForm] = useState<CompatibilityFormData>(EMPTY_COMPATIBILITY_FORM);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +108,6 @@ export function AICompatibilitySection({
     if (forceOpen && step === 'idle') setStep(1);
   }, [forceOpen, step]);
 
-  /* Pre-fill from saved student profile */
   useEffect(() => {
     if (step === 'idle') return;
     void (async () => {
@@ -147,25 +145,18 @@ export function AICompatibilitySection({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step === 'idle' ? null : 'open']);
 
-  /* Loading animation */
   useEffect(() => {
     if (step !== 'loading') return;
-    let progress = 0;
     let msgIdx = 0;
-    const progressTimer = setInterval(() => {
-      progress = Math.min(progress + Math.random() * 14 + 4, 92);
-      setLoadingProgress(Math.round(progress));
-    }, 600);
     const msgTimer = setInterval(() => {
       msgIdx = Math.min(msgIdx + 1, LOADING_MESSAGES.length - 1);
       setLoadingMsgIdx(msgIdx);
     }, 1800);
-    return () => { clearInterval(progressTimer); clearInterval(msgTimer); };
+    return () => clearInterval(msgTimer);
   }, [step]);
 
   async function submitCompatibility() {
     setStep('loading');
-    setLoadingProgress(0);
     setLoadingMsgIdx(0);
     setError(null);
     try {
@@ -181,9 +172,6 @@ export function AICompatibilitySection({
       }
       const data = (await res.json()) as CompatibilityResult;
       setResult(data);
-      await new Promise<void>((r) => setTimeout(r, 600));
-      setLoadingProgress(100);
-      await new Promise<void>((r) => setTimeout(r, 300));
       setStep('result');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.');
@@ -205,7 +193,6 @@ export function AICompatibilitySection({
 
   return (
     <>
-      {/* ── Section card ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
@@ -233,7 +220,6 @@ export function AICompatibilitySection({
         </p>
       </div>
 
-      {/* ── Modal overlay ── */}
       {step !== 'idle' && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
@@ -243,7 +229,6 @@ export function AICompatibilitySection({
             className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
             style={{ maxHeight: '92vh' }}
           >
-            {/* Modal header */}
             {step !== 'loading' && (
               <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                 <span className="font-bold text-slate-900">Compatibilidade</span>
@@ -260,7 +245,6 @@ export function AICompatibilitySection({
 
             <div className="flex-1 overflow-y-auto">
 
-              {/* Form steps */}
               {(step === 1 || step === 2 || step === 3) && (
                 <CompatibilityFormSteps
                   step={step}
@@ -273,7 +257,6 @@ export function AICompatibilitySection({
                 />
               )}
 
-              {/* Loading */}
               {step === 'loading' && (
                 <div className="flex flex-col items-center px-6 py-12">
                   <div className="flex size-16 items-center justify-center rounded-full bg-slate-100">
@@ -285,17 +268,14 @@ export function AICompatibilitySection({
                   <p className="mt-2 min-h-[20px] text-center text-sm text-slate-500">
                     {LOADING_MESSAGES[loadingMsgIdx]}
                   </p>
-                  <div className="mt-6 w-full max-w-xs">
-                    <div className="mb-2 flex justify-between text-xs font-medium text-slate-500">
-                      <span>Processando</span>
-                      <span>{loadingProgress}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500 ease-out"
-                        style={{ width: `${loadingProgress}%` }}
+                  <div className="mt-6 flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="h-2 w-2 rounded-full bg-violet-400"
+                        style={{ animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }}
                       />
-                    </div>
+                    ))}
                   </div>
                   <p className="mt-8 text-center text-xs text-slate-400">
                     Combinando{' '}
@@ -305,7 +285,6 @@ export function AICompatibilitySection({
                 </div>
               )}
 
-              {/* Result */}
               {step === 'result' && result && scoreStyle && (
                 <div className="flex flex-col">
                   <div className={`flex flex-col items-center ${scoreStyle.bg} px-6 pb-7 pt-8`}>
@@ -346,12 +325,13 @@ export function AICompatibilitySection({
                       Baseado no seu perfil · A decisão é sempre sua
                     </p>
                     <div className="flex flex-col gap-3">
-                      <a
-                        href="/descobrir"
-                        className="block rounded-full bg-emerald-600 py-3.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="block w-full rounded-full bg-emerald-600 py-3.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
                       >
-                        Entrar em contato com {firstName}
-                      </a>
+                        Fechar e ver perfil completo
+                      </button>
                       <button
                         type="button"
                         onClick={reset}
@@ -365,7 +345,6 @@ export function AICompatibilitySection({
                 </div>
               )}
 
-              {/* Error */}
               {step === 'error' && (
                 <div className="flex flex-col items-center px-6 py-10 text-center">
                   <div className="flex size-16 items-center justify-center rounded-full bg-rose-50">

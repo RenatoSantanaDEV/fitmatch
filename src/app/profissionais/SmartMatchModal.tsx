@@ -25,8 +25,6 @@ import {
   type CompatibilityFormStep,
 } from '../../components/ui/CompatibilityFormSteps';
 
-/* ─────────────────────────────── types */
-
 export interface RankingItem {
   professionalId: string;
   score: number;
@@ -78,8 +76,6 @@ const RANK_CONFIG = [
   { badgeBg: 'bg-slate-100', badgeText: 'text-slate-500', ring: 'ring-slate-100' },
 ];
 
-/* ─────────────────────────────── sub-components */
-
 function ScoreRing({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   const r = 16;
@@ -113,7 +109,14 @@ function MatchLabel({ score }: { score: number }) {
   return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">Compatível</span>;
 }
 
-/* ─────────────────────────────── main component */
+function GeneralistHint({ score }: { score: number }) {
+  if (Math.round(score * 100) >= 60) return null;
+  return (
+    <p className="mt-0.5 text-[9px] leading-snug text-amber-600">
+      Sem especialização exata — incluído por boas avaliações
+    </p>
+  );
+}
 
 interface SmartMatchModalProps {
   isOpen: boolean;
@@ -320,10 +323,13 @@ export function SmartMatchModal({
                             <><span aria-hidden>·</span><Star className="size-2.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden /><span>{pro.averageRating.toFixed(1)}</span></>
                           )}
                         </p>
-                        <div className="mt-1.5"><MatchLabel score={item.score} /></div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                          <MatchLabel score={item.score} />
+                        </div>
                         {item.reasoning && (
-                          <p className="mt-1 line-clamp-1 text-[10px] leading-relaxed text-slate-400">{item.reasoning}</p>
+                          <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-slate-400">{item.reasoning}</p>
                         )}
+                        <GeneralistHint score={item.score} />
                       </div>
                       <ScoreRing score={item.score} />
                       <Link
