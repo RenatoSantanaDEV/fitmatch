@@ -268,6 +268,7 @@ export function AICompatibilitySection({
                   onFormChange={setForm}
                   onStepChange={setStep}
                   onSubmit={() => void submitCompatibility()}
+                  onCancel={reset}
                   footerNote="Baseado no seu perfil · Não substitui avaliação presencial"
                 />
               )}
