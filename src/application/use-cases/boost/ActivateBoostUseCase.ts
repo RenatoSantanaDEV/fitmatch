@@ -4,7 +4,7 @@ import { BOOST_DURATION_DAYS } from '../../../domain/enums/BoostTier';
 
 export interface ActivateBoostInput {
   stripeCheckoutId: string;
-  stripePaymentIntentId: string;
+  stripePaymentIntentId: string | null;
 }
 
 export class ActivateBoostUseCase {

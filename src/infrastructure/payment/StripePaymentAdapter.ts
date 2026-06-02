@@ -52,7 +52,8 @@ export class StripePaymentAdapter implements IPaymentPort {
   }
 
   constructWebhookEvent(rawBody: string, signature: string): StripeWebhookEvent {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) throw new Error('STRIPE_WEBHOOK_SECRET não está configurado.');
     const event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
     return {
       type: event.type,

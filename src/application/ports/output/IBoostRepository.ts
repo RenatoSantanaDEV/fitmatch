@@ -13,5 +13,5 @@ export interface IBoostRepository {
   save(input: CreateBoostInput): Promise<Boost>;
   findByStripeCheckoutId(checkoutId: string): Promise<Boost | null>;
   findActiveByProfessionalId(professionalId: string): Promise<Boost | null>;
-  activate(id: string, paymentIntentId: string, expiresAt: Date): Promise<void>;
+  activate(id: string, paymentIntentId: string | null, expiresAt: Date): Promise<void>;
 }

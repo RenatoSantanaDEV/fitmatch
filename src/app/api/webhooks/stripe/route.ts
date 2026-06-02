@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const checkoutSession = event.data.object;
     const checkoutId = checkoutSession['id'] as string;
-    const paymentIntentId = (checkoutSession['payment_intent'] as string | null) ?? '';
+    const paymentIntentId = (checkoutSession['payment_intent'] as string | null) ?? null;
 
     try {
       await activateBoostUseCase.execute({ stripeCheckoutId: checkoutId, stripePaymentIntentId: paymentIntentId });

@@ -1,9 +1,16 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { CheckCircle, Zap } from 'lucide-react';
 
 export const metadata = { title: 'Impulso ativado — FitConnect' };
 
-export default function BoostSucessoPage() {
+export default async function BoostSucessoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session_id?: string }>;
+}) {
+  const { session_id } = await searchParams;
+  if (!session_id) redirect('/perfil#impulso');
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-16">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm text-center">

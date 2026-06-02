@@ -1,7 +1,7 @@
 import { IBoostRepository } from '../../ports/output/IBoostRepository';
 import { IPaymentPort } from '../../ports/output/IPaymentPort';
 import { IProfessionalRepository } from '../../ports/output/IProfessionalRepository';
-import { BoostTier, BOOST_PRICE_CENTS, BOOST_LABEL } from '../../../domain/enums/BoostTier';
+import { BoostTier, BOOST_PRICE_CENTS } from '../../../domain/enums/BoostTier';
 
 export interface StartBoostCheckoutInput {
   userId: string;
@@ -25,7 +25,6 @@ export class StartBoostCheckoutUseCase {
     if (!professional) throw new Error('Perfil profissional não encontrado.');
 
     const priceInCents = BOOST_PRICE_CENTS[input.tier];
-    const label = BOOST_LABEL[input.tier];
 
     const { checkoutId, checkoutUrl } = await this.paymentPort.createCheckoutSession({
       tier: input.tier,
@@ -42,7 +41,6 @@ export class StartBoostCheckoutUseCase {
       stripeCheckoutId: checkoutId,
     });
 
-    void label;
     return { checkoutUrl };
   }
 }

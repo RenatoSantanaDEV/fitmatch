@@ -40,7 +40,7 @@ export class PrismaBoostRepository implements IBoostRepository {
     return raw ? this.toEntity(raw) : null;
   }
 
-  async activate(id: string, paymentIntentId: string, expiresAt: Date): Promise<void> {
+  async activate(id: string, paymentIntentId: string | null, expiresAt: Date): Promise<void> {
     await this.prisma.professionalBoost.update({
       where: { id },
       data: {
