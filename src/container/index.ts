@@ -34,6 +34,10 @@ import { SetConversationStatusUseCase } from '../application/use-cases/chat/SetC
 import { GetUnreadSummaryUseCase } from '../application/use-cases/chat/GetUnreadSummaryUseCase';
 import { AuthorizeConversationAccessUseCase } from '../application/use-cases/chat/AuthorizeConversationAccessUseCase';
 import { GetCounterpartDetailsUseCase } from '../application/use-cases/chat/GetCounterpartDetailsUseCase';
+import { PrismaBoostRepository } from '../infrastructure/db/repositories/PrismaBoostRepository';
+import { StripePaymentAdapter } from '../infrastructure/payment/StripePaymentAdapter';
+import { StartBoostCheckoutUseCase } from '../application/use-cases/boost/StartBoostCheckoutUseCase';
+import { ActivateBoostUseCase } from '../application/use-cases/boost/ActivateBoostUseCase';
 
 const prisma = getPrismaClient();
 
@@ -159,3 +163,15 @@ export const getCounterpartDetailsUseCase = new GetCounterpartDetailsUseCase(
   professionalRepo,
   userRepo,
 );
+
+export const boostRepo = new PrismaBoostRepository(prisma);
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
+export const paymentAdapter = new StripePaymentAdapter(stripeSecretKey);
+
+export const startBoostCheckoutUseCase = new StartBoostCheckoutUseCase(
+  professionalRepo,
+  boostRepo,
+  paymentAdapter,
+);
+
+export const activateBoostUseCase = new ActivateBoostUseCase(boostRepo, professionalRepo);

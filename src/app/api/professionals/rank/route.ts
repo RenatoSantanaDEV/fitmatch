@@ -137,6 +137,8 @@ function toMatchingStudent(student: Student): MatchingStudent {
 }
 
 function toMatchingCandidate(professional: Professional): MatchingCandidate {
+  const now = new Date();
+  const isBoosted = !!professional.boostExpiresAt && professional.boostExpiresAt > now;
   return {
     professionalId: professional.id,
     bio: professional.bio,
@@ -154,5 +156,6 @@ function toMatchingCandidate(professional: Professional): MatchingCandidate {
     state: professional.location.state,
     country: professional.location.country,
     isVerified: professional.isVerified,
+    boostTier: isBoosted ? (professional.boostTier ?? undefined) : undefined,
   };
 }

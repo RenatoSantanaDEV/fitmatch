@@ -38,6 +38,9 @@ export interface ProfessionalResponseDTO {
   isAcceptingClients: boolean;
   averageRating: number | null;
   totalReviews: number;
+  isBoosted: boolean;
+  boostTier: 'BASICO' | 'PLUS' | 'PREMIUM' | null;
+  boostExpiresAt: Date | null;
   createdAt: Date;
 }
 

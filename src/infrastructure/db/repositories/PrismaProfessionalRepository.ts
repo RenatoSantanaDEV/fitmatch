@@ -104,6 +104,8 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
         locationPostal: data.location?.postalCode,
         locationLat: data.location?.latitude,
         locationLng: data.location?.longitude,
+        boostTier: data.boostTier ?? undefined,
+        boostExpiresAt: data.boostExpiresAt ?? undefined,
       },
       include: areasInclude,
     });
@@ -171,13 +173,19 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       const lat = filters.nearLat!;
       const lng = filters.nearLng!;
       const radius = filters.radiusKm!;
+      const now = new Date();
       const scored = rows
         .map((r) => {
           const d = haversineKm(lat, lng, r.locationLat ?? null, r.locationLng ?? null);
           return { r, d };
         })
         .filter((x) => x.d !== null && x.d <= radius)
-        .sort((a, b) => a.d! - b.d!);
+        .sort((a, b) => {
+          const aBoost = a.r.boostExpiresAt && a.r.boostExpiresAt > now ? 1 : 0;
+          const bBoost = b.r.boostExpiresAt && b.r.boostExpiresAt > now ? 1 : 0;
+          if (bBoost !== aBoost) return bBoost - aBoost;
+          return a.d! - b.d!;
+        });
       const total = scored.length;
       const slice = scored.slice(skip, skip + limit);
       const data = slice.map((x) => ProfessionalMapper.toDomain(x.r));
@@ -195,7 +203,15 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       this.prisma.professional.count({ where }),
     ]);
 
-    return { data: rows.map(ProfessionalMapper.toDomain), total, page, limit };
+    const now = new Date();
+    const sorted = [...rows].sort((a, b) => {
+      const aBoost = a.boostExpiresAt && a.boostExpiresAt > now ? 1 : 0;
+      const bBoost = b.boostExpiresAt && b.boostExpiresAt > now ? 1 : 0;
+      if (bBoost !== aBoost) return bBoost - aBoost;
+      return (b.averageRating ?? 0) - (a.averageRating ?? 0);
+    });
+
+    return { data: sorted.map(ProfessionalMapper.toDomain), total, page, limit };
   }
 
   async updateRating(professionalId: string, average: number, total: number): Promise<void> {

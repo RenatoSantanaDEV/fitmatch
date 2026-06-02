@@ -44,6 +44,9 @@ export class ListProfessionalsUseCase {
         isAcceptingClients: p.isAcceptingClients,
         averageRating: p.averageRating,
         totalReviews: p.totalReviews,
+        isBoosted: !!p.boostExpiresAt && p.boostExpiresAt > new Date(),
+        boostTier: (p.boostTier as 'BASICO' | 'PLUS' | 'PREMIUM' | null) ?? null,
+        boostExpiresAt: p.boostExpiresAt ?? null,
         createdAt: p.createdAt,
       })),
     };

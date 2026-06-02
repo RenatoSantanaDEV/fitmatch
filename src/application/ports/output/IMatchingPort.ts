@@ -34,6 +34,7 @@ export interface MatchingCandidate {
   state: string;
   country: string;
   isVerified: boolean;
+  boostTier?: string;
 }
 
 export interface MatchingRequest {

@@ -3,6 +3,7 @@ import { Professional } from '../../../domain/entities/Professional';
 import { type Location } from '../../../domain/value-objects/Location';
 import { type PriceRange } from '../../../domain/value-objects/PriceRange';
 import { SessionModality } from '../../../domain/enums/SessionModality';
+import { BoostTier } from '../../../domain/enums/BoostTier';
 
 type ProfessionalWithAreas = PrismaProfessional & {
   areas: (ProfessionalArea & { area: AreaAtuacao })[];
@@ -46,6 +47,8 @@ export class ProfessionalMapper {
       isAcceptingClients: raw.isAcceptingClients,
       averageRating: raw.averageRating,
       totalReviews: raw.totalReviews,
+      boostTier: (raw.boostTier as BoostTier | null) ?? null,
+      boostExpiresAt: raw.boostExpiresAt ?? null,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
     };

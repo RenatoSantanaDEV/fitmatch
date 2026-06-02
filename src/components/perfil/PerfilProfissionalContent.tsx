@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Camera, Check, Clock, Loader2, MapPin, Monitor, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertCircle, Camera, Check, Clock, Loader2, MapPin, Monitor, RefreshCw, Sparkles, Zap } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -29,6 +29,7 @@ const PROF_TABS = [
   { id: 'servicos' as const, label: 'Serviços' },
   { id: 'localizacao' as const, label: 'Localização' },
   { id: 'certificados' as const, label: 'Certificados' },
+  { id: 'impulso' as const, label: '⚡ Impulso' },
 ] as const;
 
 type ProfTabId = (typeof PROF_TABS)[number]['id'];
@@ -351,6 +352,46 @@ export function PerfilProfissionalContent({
   } | null>(null);
   const [certSaving, setCertSaving] = useState(false);
   const [docUploading, setDocUploading] = useState<string | null>(null);
+
+  type ActiveBoost = { id: string; tier: string; expiresAt: string; status: string } | null;
+  const [activeBoost, setActiveBoost] = useState<ActiveBoost>(undefined as unknown as ActiveBoost);
+  const [boostLoading, setBoostLoading] = useState(false);
+  const [boostMsg, setBoostMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [boostBuying, setBoostBuying] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== 'impulso' || boostLoading || activeBoost !== (undefined as unknown as ActiveBoost)) return;
+    setBoostLoading(true);
+    fetch('/api/boosts/active')
+      .then((r) => r.json())
+      .then((data: { boost: ActiveBoost }) => setActiveBoost(data.boost))
+      .catch(() => setBoostMsg({ type: 'err', text: 'Erro ao carregar informações de impulso.' }))
+      .finally(() => setBoostLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  async function onBuyBoost(tier: string) {
+    setBoostBuying(tier);
+    setBoostMsg(null);
+    try {
+      const res = await fetch('/api/boosts/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setBoostMsg({ type: 'err', text: data.error ?? 'Erro ao iniciar pagamento.' });
+        return;
+      }
+      const data = (await res.json()) as { checkoutUrl?: string };
+      if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+    } catch {
+      setBoostMsg({ type: 'err', text: 'Erro de conexão. Tente novamente.' });
+    } finally {
+      setBoostBuying(null);
+    }
+  }
 
   useEffect(() => {
     if (tab !== 'certificados' || certsLoading) return;
@@ -1441,6 +1482,120 @@ export function PerfilProfissionalContent({
                   + Adicionar certificado
                 </button>
               )}
+            </div>
+          </section>
+        </div>
+
+        {/* ── IMPULSO ──────────────────────────────────────────────────── */}
+        <div
+          id="perfil-panel-impulso"
+          role="tabpanel"
+          aria-labelledby="perfil-tab-impulso"
+          hidden={tab !== 'impulso'}
+          className="space-y-6"
+        >
+          <section className={sectionCardClass}>
+            <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <Zap className="size-5 text-yellow-500" aria-hidden />
+                Impulsionar meu perfil
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Apareça no topo das buscas e receba um selo que atrai mais alunos. O pagamento é feito uma vez por período.
+              </p>
+            </div>
+
+            <div className="space-y-5 px-5 py-6 sm:px-8 sm:py-7">
+              <StatusBanner msg={boostMsg} />
+
+              {boostLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-slate-400" aria-hidden />
+                </div>
+              ) : activeBoost ? (
+                <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-yellow-800">
+                    <Zap className="size-4 text-yellow-500" aria-hidden />
+                    Impulso ativo — {activeBoost.tier === 'PREMIUM' ? 'Super Destaque' : activeBoost.tier === 'PLUS' ? 'Destaque+' : 'Destaque'}
+                  </p>
+                  <p className="mt-1 text-xs text-yellow-700">
+                    Válido até {new Date(activeBoost.expiresAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  {
+                    tier: 'BASICO',
+                    label: 'Destaque',
+                    price: 'R$ 20',
+                    days: 7,
+                    color: 'amber',
+                    benefits: ['Aparece antes de perfis sem impulso', 'Selo "Destaque" no card', '7 dias de visibilidade'],
+                  },
+                  {
+                    tier: 'PLUS',
+                    label: 'Destaque+',
+                    price: 'R$ 50',
+                    days: 15,
+                    color: 'blue',
+                    benefits: ['Tudo do Destaque', 'Bônus no ranking de compatibilidade IA', 'Selo "Destaque+" no card', '15 dias de visibilidade'],
+                  },
+                  {
+                    tier: 'PREMIUM',
+                    label: 'Super Destaque',
+                    price: 'R$ 100',
+                    days: 30,
+                    color: 'yellow',
+                    benefits: ['Tudo do Destaque+', 'Maior bônus no ranking IA', 'Selo ⚡ "Super Destaque" no card', '30 dias de visibilidade'],
+                  },
+                ].map(({ tier, label, price, days, color, benefits }) => (
+                  <div
+                    key={tier}
+                    className={`flex flex-col rounded-xl border p-5 ${
+                      color === 'yellow'
+                        ? 'border-yellow-200 bg-yellow-50'
+                        : color === 'blue'
+                        ? 'border-blue-200 bg-blue-50'
+                        : 'border-amber-200 bg-amber-50'
+                    }`}
+                  >
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${color === 'yellow' ? 'text-yellow-700' : color === 'blue' ? 'text-blue-700' : 'text-amber-700'}`}>
+                      {label}
+                    </p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{price}</p>
+                    <p className="text-xs text-slate-500">{days} dias</p>
+                    <ul className="mt-3 flex-1 space-y-1.5 text-xs text-slate-600">
+                      {benefits.map((b) => (
+                        <li key={b} className="flex items-start gap-1.5">
+                          <Check className="mt-0.5 size-3 shrink-0 text-emerald-500" aria-hidden />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      disabled={!!boostBuying || !!activeBoost}
+                      onClick={() => void onBuyBoost(tier)}
+                      className={`mt-4 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        color === 'yellow'
+                          ? 'bg-yellow-500 hover:bg-yellow-600'
+                          : color === 'blue'
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : 'bg-amber-500 hover:bg-amber-600'
+                      }`}
+                    >
+                      {boostBuying === tier && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
+                      {activeBoost ? 'Impulso ativo' : 'Impulsionar agora'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-slate-400">
+                Pagamento seguro via Stripe. Cartão de crédito, débito ou PIX. Sem renovação automática.
+              </p>
             </div>
           </section>
         </div>

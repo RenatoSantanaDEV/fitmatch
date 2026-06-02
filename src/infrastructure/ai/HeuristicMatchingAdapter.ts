@@ -55,7 +55,7 @@ function scoreCandidate(student: MatchingStudent, candidate: MatchingCandidate):
   const social = scoreSocial(candidate);
   const verification = candidate.isVerified ? 1 : 0;
 
-  const total =
+  const raw =
     specialization * 0.35 +
     experience * 0.2 +
     modality * 0.15 +
@@ -63,7 +63,15 @@ function scoreCandidate(student: MatchingStudent, candidate: MatchingCandidate):
     social * 0.1 +
     verification * 0.05;
 
-  // Cap at 0.95 — leaves headroom, matches the LLM rubric.
+  // Base score capped at 0.95; boost adds on top, final cap at 0.97.
+  const baseScore = Math.min(raw, 0.95);
+
+  const boostBonus =
+    candidate.boostTier === 'PREMIUM' ? 0.12
+    : candidate.boostTier === 'PLUS' ? 0.07
+    : candidate.boostTier === 'BASICO' ? 0.03
+    : 0;
+
   return {
     specialization,
     experience,
@@ -71,7 +79,7 @@ function scoreCandidate(student: MatchingStudent, candidate: MatchingCandidate):
     budget,
     social,
     verification,
-    total: Math.min(total, 0.95),
+    total: Math.min(baseScore + boostBonus, 0.97),
   };
 }
 

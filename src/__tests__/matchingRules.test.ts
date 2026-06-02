@@ -40,6 +40,8 @@ function makeProfessional(overrides: Partial<Professional> = {}): Professional {
     isAcceptingClients: true,
     averageRating: null,
     totalReviews: 0,
+    boostTier: null,
+    boostExpiresAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

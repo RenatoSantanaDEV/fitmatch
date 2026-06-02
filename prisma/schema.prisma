@@ -68,6 +68,19 @@ enum ConversationStatus {
   BLOCKED
 }
 
+enum BoostTier {
+  BASICO
+  PLUS
+  PREMIUM
+}
+
+enum BoostStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -210,6 +223,9 @@ model Professional {
   classDynamics          String?
   sessionDurationMinutes Int?
 
+  boostTier       BoostTier?
+  boostExpiresAt  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -222,6 +238,7 @@ model Professional {
   matches               Match[]
   favoritedByStudents   StudentFavorite[]
   conversations         Conversation[]
+  boosts                ProfessionalBoost[]
 
   @@index([locationCity, locationState])
   @@index([isAcceptingClients, averageRating])
@@ -403,4 +420,22 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+model ProfessionalBoost {
+  id                    String       @id @default(cuid())
+  professionalId        String
+  professional          Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  tier                  BoostTier
+  priceInCents          Int
+  currency              String       @default("BRL")
+  stripeCheckoutId      String       @unique
+  stripePaymentIntentId String?
+  status                BoostStatus  @default(PENDING)
+  expiresAt             DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([professionalId, status])
+  @@map("professional_boosts")
 }

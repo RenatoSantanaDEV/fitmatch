@@ -1,6 +1,7 @@
 import { type Location } from '../value-objects/Location';
 import { type PriceRange } from '../value-objects/PriceRange';
 import { SessionModality } from '../enums/SessionModality';
+import { BoostTier } from '../enums/BoostTier';
 
 export interface AreaAtuacao {
   readonly id: string;
@@ -24,6 +25,8 @@ export interface Professional {
   readonly isAcceptingClients: boolean;
   readonly averageRating: number | null;
   readonly totalReviews: number;
+  readonly boostTier: BoostTier | null;
+  readonly boostExpiresAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

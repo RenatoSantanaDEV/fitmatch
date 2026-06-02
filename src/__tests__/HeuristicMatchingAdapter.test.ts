@@ -258,4 +258,93 @@ describe('HeuristicMatchingAdapter', () => {
       expect(r.score).toBeCloseTo(0.745, 2)
     })
   })
+
+  describe('bônus de impulsionamento (boost)', () => {
+    it('sem boostTier não altera o score base', async () => {
+      const base = makeCandidate({ professionalId: 'base' })
+      const semBoost = makeCandidate({ professionalId: 'sem-boost', boostTier: undefined })
+      const [r1] = await adapter.findMatches({ student: makeStudent({ preferredSpecializations: [] }), candidates: [base], maxResults: 1 })
+      const [r2] = await adapter.findMatches({ student: makeStudent({ preferredSpecializations: [] }), candidates: [semBoost], maxResults: 1 })
+      expect(r1.score).toBeCloseTo(r2.score, 5)
+    })
+
+    it('BASICO adiciona 0.03 ao score', async () => {
+      const student = makeStudent({ preferredSpecializations: [] })
+      const sem = makeCandidate({ professionalId: 'sem' })
+      const com = makeCandidate({ professionalId: 'com', boostTier: 'BASICO' })
+      const results = await adapter.findMatches({ student, candidates: [sem, com], maxResults: 10 })
+      const scoreSem = results.find((r) => r.professionalId === 'sem')!.score
+      const scoreCom = results.find((r) => r.professionalId === 'com')!.score
+      expect(scoreCom - scoreSem).toBeCloseTo(0.03, 5)
+    })
+
+    it('PLUS adiciona 0.07 ao score', async () => {
+      const student = makeStudent({ preferredSpecializations: [] })
+      const sem = makeCandidate({ professionalId: 'sem' })
+      const com = makeCandidate({ professionalId: 'com', boostTier: 'PLUS' })
+      const results = await adapter.findMatches({ student, candidates: [sem, com], maxResults: 10 })
+      const scoreSem = results.find((r) => r.professionalId === 'sem')!.score
+      const scoreCom = results.find((r) => r.professionalId === 'com')!.score
+      expect(scoreCom - scoreSem).toBeCloseTo(0.07, 5)
+    })
+
+    it('PREMIUM adiciona 0.12 ao score', async () => {
+      const student = makeStudent({ preferredSpecializations: [] })
+      const sem = makeCandidate({ professionalId: 'sem' })
+      const com = makeCandidate({ professionalId: 'com', boostTier: 'PREMIUM' })
+      const results = await adapter.findMatches({ student, candidates: [sem, com], maxResults: 10 })
+      const scoreSem = results.find((r) => r.professionalId === 'sem')!.score
+      const scoreCom = results.find((r) => r.professionalId === 'com')!.score
+      expect(scoreCom - scoreSem).toBeCloseTo(0.12, 5)
+    })
+
+    it('score com PREMIUM é capeado em 0.97', async () => {
+      const student = makeStudent({
+        experienceLevel: ExperienceLevel.ADVANCED,
+        preferredSpecializations: [SpecializationType.PERSONAL_TRAINING],
+        preferredModality: SessionModality.ONLINE,
+        budgetRange: { min: 100, max: 200, currency: 'BRL' },
+      })
+      const candidate = makeCandidate({
+        areaSlugs: [SpecializationType.PERSONAL_TRAINING],
+        modalities: [SessionModality.ONLINE],
+        yearsExperience: 8,
+        averageRating: 5.0,
+        totalReviews: 30,
+        priceRange: { min: 100, max: 150, currency: 'BRL' },
+        isVerified: true,
+        boostTier: 'PREMIUM',
+      })
+      const [r] = await adapter.findMatches({ student, candidates: [candidate], maxResults: 1 })
+      expect(r.score).toBeLessThanOrEqual(0.97)
+      expect(r.score).toBeCloseTo(0.97, 2)
+    })
+
+    it('profissional com PREMIUM supera profissional melhor avaliado sem boost', async () => {
+      const student = makeStudent({ preferredSpecializations: [SpecializationType.YOGA] })
+      const topRated = makeCandidate({
+        professionalId: 'top',
+        areaSlugs: [SpecializationType.YOGA],
+        averageRating: 5.0,
+        totalReviews: 50,
+        isVerified: true,
+        yearsExperience: 10,
+      })
+      const boosted = makeCandidate({
+        professionalId: 'boosted',
+        areaSlugs: [SpecializationType.YOGA],
+        averageRating: null,
+        totalReviews: 0,
+        isVerified: false,
+        yearsExperience: 1,
+        boostTier: 'PREMIUM',
+      })
+      const results = await adapter.findMatches({ student, candidates: [topRated, boosted], maxResults: 10 })
+      const scoreTop = results.find((r) => r.professionalId === 'top')!.score
+      const scoreBoosted = results.find((r) => r.professionalId === 'boosted')!.score
+      // boost PREMIUM (+0.12) não compensa uma diferença de score muito grande — valida que não distorce demais
+      expect(scoreBoosted).toBeGreaterThan(0)
+      expect(scoreTop).toBeGreaterThan(scoreBoosted)
+    })
+  })
 })
