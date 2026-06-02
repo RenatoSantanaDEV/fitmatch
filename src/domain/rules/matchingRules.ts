@@ -50,7 +50,7 @@ export function isModalityCompatible(student: Student, professional: Professiona
 }
 
 function sameCity(student: Student, professional: Professional): boolean {
-  if (!student.preferredLocation) return true;
+  if (!student.preferredLocation) return false;
   return (
     normalize(student.preferredLocation.city) === normalize(professional.location.city) &&
     normalize(student.preferredLocation.state) === normalize(professional.location.state)

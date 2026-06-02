@@ -9,6 +9,7 @@ import type { Student } from '../../../../domain/entities/Student';
 import type { Professional } from '../../../../domain/entities/Professional';
 import { ExperienceLevel } from '../../../../domain/enums/ExperienceLevel';
 import { SessionModality } from '../../../../domain/enums/SessionModality';
+import { prefilterCandidates } from '../../../../domain/rules/matchingRules';
 
 const MAX_IDS = 20;
 const MAX_RESULTS = 5;
@@ -76,10 +77,16 @@ export async function POST(req: NextRequest) {
 
     const matchingStudent = applyFormOverride(toMatchingStudent(student), body.formData);
 
+    const studentForFilter: Student = body.formData?.preferredModality && MODALITY_MAP[body.formData.preferredModality]
+      ? { ...student, preferredModality: MODALITY_MAP[body.formData.preferredModality] }
+      : student;
+
+    const filtered = prefilterCandidates(studentForFilter, professionals);
+
     const adapter = MatchingAdapterFactory.create();
     const results = await adapter.findMatches({
       student: matchingStudent,
-      candidates: professionals.map(toMatchingCandidate),
+      candidates: filtered.map(toMatchingCandidate),
       maxResults: MAX_RESULTS,
     });
 
