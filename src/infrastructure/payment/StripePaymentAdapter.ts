@@ -16,6 +16,7 @@ export class StripePaymentAdapter implements IPaymentPort {
   }
 
   async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CheckoutSessionResult> {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY não está configurado.');
     const priceInCents = BOOST_PRICE_CENTS[input.tier];
     const label = BOOST_LABEL[input.tier];
     const days = BOOST_DURATION_DAYS[input.tier];

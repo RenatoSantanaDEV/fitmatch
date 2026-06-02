@@ -165,8 +165,7 @@ export const getCounterpartDetailsUseCase = new GetCounterpartDetailsUseCase(
 );
 
 export const boostRepo = new PrismaBoostRepository(prisma);
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) throw new Error('STRIPE_SECRET_KEY não está configurado.');
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
 export const paymentAdapter = new StripePaymentAdapter(stripeSecretKey);
 
 export const startBoostCheckoutUseCase = new StartBoostCheckoutUseCase(
