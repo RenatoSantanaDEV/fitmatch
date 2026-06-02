@@ -9,14 +9,19 @@ const TIER_DESCRIPTIONS: Record<BoostTier, string> = {
 };
 
 export class StripePaymentAdapter implements IPaymentPort {
-  private readonly stripe: Stripe;
+  private _stripe: Stripe | null = null;
 
-  constructor(secretKey: string) {
-    this.stripe = new Stripe(secretKey, { apiVersion: '2026-05-27.dahlia' });
+  constructor(private readonly secretKey: string) {}
+
+  private get stripe(): Stripe {
+    if (!this._stripe) {
+      if (!this.secretKey) throw new Error('STRIPE_SECRET_KEY não está configurado.');
+      this._stripe = new Stripe(this.secretKey, { apiVersion: '2026-05-27.dahlia' });
+    }
+    return this._stripe;
   }
 
   async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CheckoutSessionResult> {
-    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY não está configurado.');
     const priceInCents = BOOST_PRICE_CENTS[input.tier];
     const label = BOOST_LABEL[input.tier];
     const days = BOOST_DURATION_DAYS[input.tier];
