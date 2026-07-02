@@ -1,34 +1,19 @@
 import { auth } from '../lib/auth';
 import { HomePage } from '../components/landing/HomePage';
-import type { FeaturedProfessional } from '../components/landing/HomePage';
-import { listProfessionalsUseCase } from '../container';
+import { listFeaturedProfessionalsUseCase } from '../container';
+import type { ProfessionalResponseDTO } from '../application/dtos/professional/ProfessionalDTO';
 
 export default async function Home() {
   const session = await auth();
 
-  let featuredProfessional: FeaturedProfessional | null = null;
+  let featuredProfessionals: ProfessionalResponseDTO[] = [];
   try {
-    const { data } = await listProfessionalsUseCase.execute({ page: 1, limit: 1 });
-    const top = data[0];
-    if (top) {
-      featuredProfessional = {
-        userId: top.userId,
-        displayName: top.displayName,
-        avatarUrl: top.avatarUrl,
-        areas: top.areas,
-        location: { city: top.location.city, state: top.location.state },
-        modalities: top.modalities,
-        sessionPrice: top.sessionPrice,
-        isVerified: top.isVerified,
-        averageRating: top.averageRating,
-        totalReviews: top.totalReviews,
-      };
-    }
+    featuredProfessionals = await listFeaturedProfessionalsUseCase.execute({ limit: 8 });
   } catch {
-    // Silently fall back to no featured professional
+    // Silently fall back to no featured professionals
   }
 
   return (
-    <HomePage isAuthenticated={!!session?.user?.id} featuredProfessional={featuredProfessional} />
+    <HomePage isAuthenticated={!!session?.user?.id} featuredProfessionals={featuredProfessionals} />
   );
 }

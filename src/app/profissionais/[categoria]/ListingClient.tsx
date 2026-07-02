@@ -28,6 +28,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { ProfessionalResponseDTO } from '../../../application/dtos/professional/ProfessionalDTO';
+import { BoostBadge } from '../../../components/professional/BoostBadge';
 
 /* ─────────────────────────────────────────────────── types */
 
@@ -255,12 +256,15 @@ function ProfessionalCard({
             aria-hidden
           />
         </button>
-        {p.isVerified && (
-          <div className="absolute left-3 top-3">
-            <span className="flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-emerald-700 shadow-sm backdrop-blur-sm">
-              <CheckCircle2 className="size-2.5" aria-hidden />
-              Verificado
-            </span>
+        {(p.isVerified || p.isBoosted) && (
+          <div className="absolute left-3 top-3 flex flex-col items-start gap-1">
+            {p.isVerified && (
+              <span className="flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-emerald-700 shadow-sm backdrop-blur-sm">
+                <CheckCircle2 className="size-2.5" aria-hidden />
+                Verificado
+              </span>
+            )}
+            <BoostBadge isBoosted={p.isBoosted} boostTier={p.boostTier} size="md" />
           </div>
         )}
       </div>

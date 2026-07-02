@@ -34,4 +34,6 @@ export interface IProfessionalRepository {
   update(id: string, data: Partial<Omit<Professional, 'id' | 'userId' | 'createdAt'>>): Promise<Professional>;
   list(filters: ProfessionalFilters): Promise<PaginatedResult<Professional>>;
   updateRating(professionalId: string, average: number, total: number): Promise<void>;
+  countActive(): Promise<number>;
+  findFeatured(limit: number): Promise<Professional[]>;
 }

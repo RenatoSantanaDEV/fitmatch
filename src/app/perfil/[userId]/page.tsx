@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '../../../lib/auth';
 import { getPrismaClient } from '../../../infrastructure/db/prisma/client';
+import { listSimilarProfessionalsUseCase } from '../../../container';
 import { ProfilePageClient } from './ProfilePageClient';
 import type { ProfileData } from './ProfilePageClient';
 
@@ -109,7 +110,18 @@ export default async function ProfessionalProfilePage({
     })),
   };
 
+  const similarProfessionals = await listSimilarProfessionalsUseCase.execute({
+    excludeProfessionalId: professional.id,
+    specializationSlugs: professional.areas.map((pa) => pa.area.slug),
+    limit: 6,
+  });
+
   return (
-    <ProfilePageClient data={data} isFavorited={isFavorited} isOwnProfile={isOwnProfile} />
+    <ProfilePageClient
+      data={data}
+      isFavorited={isFavorited}
+      isOwnProfile={isOwnProfile}
+      similarProfessionals={similarProfessionals}
+    />
   );
 }

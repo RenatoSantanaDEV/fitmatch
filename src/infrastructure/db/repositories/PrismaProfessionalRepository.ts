@@ -225,4 +225,24 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       data: { averageRating: average, totalReviews: total },
     });
   }
+
+  async countActive(): Promise<number> {
+    return this.prisma.professional.count({ where: { isAcceptingClients: true } });
+  }
+
+  async findFeatured(limit: number): Promise<Professional[]> {
+    const now = new Date();
+    const tierWeight: Record<string, number> = { PREMIUM: 3, PLUS: 2, BASICO: 1 };
+    const rows = await this.prisma.professional.findMany({
+      where: { boostExpiresAt: { gt: now }, isAcceptingClients: true },
+      include: areasInclude,
+      take: 100,
+    });
+    const sorted = [...rows].sort((a, b) => {
+      const weightDiff = (tierWeight[b.boostTier ?? ''] ?? 0) - (tierWeight[a.boostTier ?? ''] ?? 0);
+      if (weightDiff !== 0) return weightDiff;
+      return (b.averageRating ?? 0) - (a.averageRating ?? 0);
+    });
+    return sorted.slice(0, limit).map(ProfessionalMapper.toDomain);
+  }
 }

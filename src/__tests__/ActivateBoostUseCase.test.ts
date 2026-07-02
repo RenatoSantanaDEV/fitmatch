@@ -64,6 +64,8 @@ function makeProfessionalRepo(overrides: Partial<IProfessionalRepository> = {}):
     update: vi.fn().mockResolvedValue(makeProfessional()),
     list: vi.fn(),
     updateRating: vi.fn(),
+    countActive: vi.fn(),
+    findFeatured: vi.fn(),
     ...overrides,
   }
 }

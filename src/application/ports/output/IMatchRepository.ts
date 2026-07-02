@@ -8,4 +8,6 @@ export interface IMatchRepository {
   save(match: Omit<Match, 'id'>): Promise<Match>;
   saveMany(matches: Omit<Match, 'id'>[]): Promise<Match[]>;
   updateStatus(id: string, status: MatchStatus, respondedAt?: Date): Promise<Match>;
+  countReceivedByProfessional(professionalId: string): Promise<number>;
+  countReceivedByProfessionalInRange(professionalId: string, from: Date, to: Date): Promise<number>;
 }

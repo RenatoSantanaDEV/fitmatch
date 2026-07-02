@@ -14,45 +14,11 @@ import {
   Sparkles,
   CheckCircle2,
   XCircle,
-  Star,
-  MapPin,
-  Monitor,
 } from 'lucide-react';
 import { OpenAuthModal } from '../auth/OpenAuthModal';
 import { FindTeacherSearchPanel } from './FindTeacherSearchPanel';
-import { SESSION_MODALITY_LABELS } from '../../lib/sessionModalityLabels';
-import { resolveAvatarUrl } from '../../lib/resolveAvatarUrl';
-import type { SessionModality } from '../../domain/enums/SessionModality';
-
-export interface FeaturedProfessional {
-  userId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  areas: { id: string; nome: string }[];
-  location: { city: string; state: string };
-  modalities: SessionModality[];
-  sessionPrice: { min: number; max: number; currency: string };
-  isVerified: boolean;
-  averageRating: number | null;
-  totalReviews: number;
-}
-
-function getAvatarInitials(fullName: string): string {
-  return fullName
-    .split(' ')
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase();
-}
-
-function formatStartingPrice(min: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(min);
-  } catch {
-    return `${currency} ${min}`;
-  }
-}
+import { FeaturedProfessionalsCarousel } from '../professional/FeaturedProfessionalsCarousel';
+import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
 
 const howItWorks = [
   {
@@ -107,10 +73,10 @@ const features = [
 
 export function HomePage({
   isAuthenticated,
-  featuredProfessional,
+  featuredProfessionals,
 }: {
   isAuthenticated: boolean;
-  featuredProfessional: FeaturedProfessional | null;
+  featuredProfessionals: ProfessionalResponseDTO[];
 }) {
   return (
     <main className="flex flex-1 flex-col bg-white">
@@ -118,7 +84,7 @@ export function HomePage({
       {/* ===================================================
           HERO
       =================================================== */}
-      <section className="border-b border-emerald-100 bg-gradient-to-b from-emerald-50/60 to-white">
+      <section className="bg-gradient-to-b from-emerald-50/60 to-white">
         <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-[1fr_420px] lg:gap-16 lg:py-24 lg:px-10">
 
           {/* Left — copy + actions */}
@@ -159,7 +125,7 @@ export function HomePage({
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap gap-8 border-t border-emerald-100 pt-6">
+            <div className="flex flex-wrap gap-8 pt-6">
               {[
                 { value: '50+', label: 'Professores verificados' },
                 { value: '12', label: 'Especialidades' },
@@ -173,115 +139,10 @@ export function HomePage({
             </div>
           </div>
 
-          {/* Right — featured teacher card */}
+          {/* Right — featured professionals carousel */}
           <div className="flex flex-col">
-            {featuredProfessional ? (
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  {(() => {
-                    const avatarUrl = resolveAvatarUrl(
-                      featuredProfessional.userId,
-                      featuredProfessional.avatarUrl,
-                    );
-                    return avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={avatarUrl}
-                        alt={featuredProfessional.displayName}
-                        className="h-14 w-14 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white">
-                        {getAvatarInitials(featuredProfessional.displayName)}
-                      </div>
-                    );
-                  })()}
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-slate-900">{featuredProfessional.displayName}</span>
-                      {featuredProfessional.isVerified && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                          <BadgeCheck className="size-3" aria-hidden />
-                          Verificado
-                        </span>
-                      )}
-                    </div>
-                    {featuredProfessional.areas[0] && (
-                      <p className="mt-0.5 text-sm text-slate-500">{featuredProfessional.areas[0].nome}</p>
-                    )}
-                    {featuredProfessional.averageRating != null ? (
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`size-3.5 ${
-                              i < Math.round(featuredProfessional.averageRating!)
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'fill-slate-200 text-slate-200'
-                            }`}
-                            aria-hidden
-                          />
-                        ))}
-                        <span className="text-sm font-semibold text-slate-800">
-                          {featuredProfessional.averageRating.toFixed(1)}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          ({featuredProfessional.totalReviews} avaliações)
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="mt-1.5 text-xs italic text-slate-400">Sem avaliações ainda</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Specialty tags */}
-                {featuredProfessional.areas.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {featuredProfessional.areas.slice(0, 3).map((area) => (
-                      <span
-                        key={area.id}
-                        className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
-                      >
-                        {area.nome}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Info */}
-                <div className="mt-4 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden />
-                    {featuredProfessional.location.city}, {featuredProfessional.location.state}
-                  </div>
-                  {featuredProfessional.modalities.length > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <Monitor className="size-3.5 shrink-0 text-slate-400" aria-hidden />
-                      {featuredProfessional.modalities.map((m) => SESSION_MODALITY_LABELS[m]).join(' · ')}
-                    </div>
-                  )}
-                </div>
-
-                {/* Price + CTA */}
-                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <div>
-                    <span className="text-lg font-bold text-slate-900">
-                      {formatStartingPrice(
-                        featuredProfessional.sessionPrice.min,
-                        featuredProfessional.sessionPrice.currency,
-                      )}
-                    </span>
-                    <span className="text-sm text-slate-400">/sessão</span>
-                  </div>
-                  <Link
-                    href={`/perfil/${featuredProfessional.userId}`}
-                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                  >
-                    Ver perfil
-                  </Link>
-                </div>
-              </div>
+            {featuredProfessionals.length > 0 ? (
+              <FeaturedProfessionalsCarousel professionals={featuredProfessionals} />
             ) : (
               <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
                 <p className="text-sm font-medium text-slate-500">Novos professores em breve</p>

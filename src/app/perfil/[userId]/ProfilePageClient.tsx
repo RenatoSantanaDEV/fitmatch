@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Award,
@@ -23,6 +23,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { AICompatibilitySection } from './AICompatibilitySection';
+import { FeaturedProfessionalsCarousel } from '../../../components/professional/FeaturedProfessionalsCarousel';
+import type { ProfessionalResponseDTO } from '../../../application/dtos/professional/ProfessionalDTO';
 
 /* ────────────────────────────────────────────────────────── types */
 
@@ -183,10 +185,12 @@ export function ProfilePageClient({
   data,
   isFavorited: initialFavorited,
   isOwnProfile,
+  similarProfessionals = [],
 }: {
   data: ProfileData;
   isFavorited: boolean;
   isOwnProfile: boolean;
+  similarProfessionals?: ProfessionalResponseDTO[];
 }) {
   const router = useRouter();
   const [isFav, setIsFav] = useState(initialFavorited);
@@ -204,6 +208,11 @@ export function ProfilePageClient({
   const firstName = data.displayName.split(' ')[0];
   const isTopPro = data.averageRating != null && data.averageRating >= 4.5 && data.totalReviews >= 5;
   const mainArea = data.areas[0]?.nome ?? null;
+
+  useEffect(() => {
+    if (isOwnProfile) return;
+    fetch(`/api/professionals/${data.userId}/views`, { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  }, [data.userId, isOwnProfile]);
 
   async function toggleFav() {
     if (favLoading) return;
@@ -578,18 +587,28 @@ export function ProfilePageClient({
               </section>
             )}
 
-            {mainArea && (
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
-                <p className="text-sm font-semibold text-slate-700">
-                  Explore outros profissionais de {mainArea}
-                </p>
-                <Link
-                  href={`/descobrir?q=${encodeURIComponent(mainArea)}`}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
-                >
-                  Ver profissionais similares
-                </Link>
+            {similarProfessionals.length > 0 ? (
+              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                <FeaturedProfessionalsCarousel
+                  professionals={similarProfessionals}
+                  title="Profissionais similares"
+                  subtitle={mainArea ? `Outros educadores de ${mainArea}` : undefined}
+                />
               </div>
+            ) : (
+              mainArea && (
+                <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Explore outros profissionais de {mainArea}
+                  </p>
+                  <Link
+                    href={`/descobrir?q=${encodeURIComponent(mainArea)}`}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                  >
+                    Ver profissionais similares
+                  </Link>
+                </div>
+              )
             )}
           </div>
 

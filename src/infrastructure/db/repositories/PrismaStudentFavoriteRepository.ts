@@ -26,4 +26,8 @@ export class PrismaStudentFavoriteRepository {
     });
     return { favorited: true };
   }
+
+  async countReceivedByProfessional(professionalId: string): Promise<number> {
+    return this.prisma.studentFavorite.count({ where: { professionalId } });
+  }
 }

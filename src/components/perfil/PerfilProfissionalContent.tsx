@@ -1,6 +1,24 @@
 'use client';
 
-import { AlertCircle, Camera, Check, Clock, Loader2, MapPin, Monitor, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import {
+  AlertCircle,
+  BarChart3,
+  Calendar,
+  Camera,
+  Check,
+  Clock,
+  Eye,
+  Heart,
+  Loader2,
+  Lock,
+  MapPin,
+  Monitor,
+  RefreshCw,
+  Sparkles,
+  TrendingUp,
+  Users,
+  Zap,
+} from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -14,6 +32,8 @@ import {
 import Image from 'next/image';
 import { SessionModality } from '../../domain/enums/SessionModality';
 import { ProfileAddressSection, type ProfileInitialAddress } from './ProfileAddressSection';
+import { InsightStatCard } from './InsightStatCard';
+import type { ProfessionalInsightsDTO } from '../../application/dtos/professional/ProfessionalInsightsDTO';
 
 const inputClass =
   'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
@@ -367,6 +387,20 @@ export function PerfilProfissionalContent({
       .then((data: { boost: ActiveBoost }) => setActiveBoost(data.boost))
       .catch(() => setBoostMsg({ type: 'err', text: 'Erro ao carregar informações de impulso.' }))
       .finally(() => setBoostLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  const [insights, setInsights] = useState<ProfessionalInsightsDTO | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== 'impulso' || insightsLoading || insights !== null) return;
+    setInsightsLoading(true);
+    fetch('/api/professionals/me/insights')
+      .then((r) => r.json())
+      .then((data: ProfessionalInsightsDTO) => setInsights(data))
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -1497,6 +1531,118 @@ export function PerfilProfissionalContent({
           <section className={sectionCardClass}>
             <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <BarChart3 className="size-4 text-slate-400" aria-hidden />
+                Seus insights
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Acompanhe como seu perfil está performando.
+              </p>
+            </div>
+
+            <div className="space-y-5 px-5 py-6 sm:px-8 sm:py-7">
+              {insightsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-slate-400" aria-hidden />
+                </div>
+              ) : insights ? (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <InsightStatCard label="Visualizações totais" value={insights.totalViews} icon={Eye} />
+                    <InsightStatCard label="Visualizações (30 dias)" value={insights.viewsLast30Days} icon={Eye} />
+                  </div>
+
+                  {insights.funnel && (
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-slate-700">Funil de engajamento</p>
+                      <div className="grid gap-4 sm:grid-cols-4">
+                        <InsightStatCard label="Visualizações" value={insights.funnel.views} icon={Eye} />
+                        <InsightStatCard label="Favoritos" value={insights.funnel.favorites} icon={Heart} />
+                        <InsightStatCard label="Matches" value={insights.funnel.matches} icon={Users} />
+                        <InsightStatCard label="Agendamentos" value={insights.funnel.bookings} icon={Calendar} />
+                      </div>
+                    </div>
+                  )}
+
+                  {insights.conversionRates && (
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-slate-700">Taxas de conversão</p>
+                      <div className="grid gap-4 sm:grid-cols-4">
+                        <InsightStatCard label="Visita → favorito" value={`${insights.conversionRates.viewToFavoritePct}%`} icon={TrendingUp} />
+                        <InsightStatCard label="Favorito → match" value={`${insights.conversionRates.favoriteToMatchPct}%`} icon={TrendingUp} />
+                        <InsightStatCard label="Match → agendamento" value={`${insights.conversionRates.matchToBookingPct}%`} icon={TrendingUp} />
+                        <InsightStatCard label="Conversão geral" value={`${insights.conversionRates.overallViewToBookingPct}%`} icon={TrendingUp} />
+                      </div>
+                    </div>
+                  )}
+
+                  {insights.platformComparison && insights.platformComparison.sampleSize >= 3 && (
+                    <div className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <BarChart3 className="size-4 text-slate-400" aria-hidden />
+                        Comparação com a plataforma
+                      </p>
+                      <p className="mt-1.5 text-sm text-slate-600">
+                        Você está{' '}
+                        <strong
+                          className={
+                            insights.platformComparison.percentileHint === 'above'
+                              ? 'text-emerald-600'
+                              : insights.platformComparison.percentileHint === 'below'
+                                ? 'text-rose-600'
+                                : 'text-slate-700'
+                          }
+                        >
+                          {insights.platformComparison.percentileHint === 'above'
+                            ? 'acima'
+                            : insights.platformComparison.percentileHint === 'below'
+                              ? 'abaixo'
+                              : 'na média'}
+                        </strong>{' '}
+                        da média da plataforma em visualizações nos últimos 30 dias ({insights.platformComparison.yourViewsLast30Days} vs.{' '}
+                        {insights.platformComparison.platformAvgViewsLast30Days} em média).
+                      </p>
+                    </div>
+                  )}
+
+                  {insights.boostEffectiveness && (
+                    <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-yellow-800">
+                        <Zap className="size-4 text-yellow-500" aria-hidden />
+                        Efetividade do impulso atual
+                      </p>
+                      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs text-yellow-700">Visualizações</p>
+                          <p className="text-sm font-semibold text-yellow-900">
+                            {insights.boostEffectiveness.viewsBeforeBoost} antes → {insights.boostEffectiveness.viewsDuringBoost} durante
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-yellow-700">Matches</p>
+                          <p className="text-sm font-semibold text-yellow-900">
+                            {insights.boostEffectiveness.matchesBeforeBoost} antes → {insights.boostEffectiveness.matchesDuringBoost} durante
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {insights.tierUnlocked === 'FREE' && (
+                    <div className="flex items-start gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+                      <Lock className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+                      <p className="text-sm text-slate-600">
+                        Ative um impulso para ver quantos favoritos, matches e agendamentos seu perfil está gerando, além de comparações com a média da plataforma.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </section>
+
+          <section className={sectionCardClass}>
+            <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
                 Impulsionar meu perfil
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -1593,7 +1739,7 @@ export function PerfilProfissionalContent({
               </div>
 
               <p className="text-xs text-slate-400">
-                Pagamento seguro via Stripe. Cartão de crédito, débito ou PIX. Sem renovação automática.
+                Pagamento seguro. Cartão de crédito, débito ou PIX. Sem renovação automática.
               </p>
             </div>
           </section>

@@ -6,7 +6,6 @@ import {
   Monitor,
   Star,
   Users,
-  Zap,
 } from 'lucide-react';
 import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
 import {
@@ -17,6 +16,7 @@ import {
   RATING_STAR_SLOTS,
 } from './discoverFormatters';
 import { SessionModality } from '../../domain/enums/SessionModality';
+import { BoostBadge } from '../../components/professional/BoostBadge';
 
 interface DiscoverProfessionalCardProps {
   professional: ProfessionalResponseDTO;
@@ -84,22 +84,7 @@ export function DiscoverProfessionalCard({
                   Verificado
                 </span>
               )}
-              {professional.isBoosted && professional.boostTier === 'PREMIUM' && (
-                <span className="inline-flex items-center gap-0.5 rounded-md border border-yellow-300 bg-yellow-50 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">
-                  <Zap className="size-2.5" aria-hidden />
-                  Super Destaque
-                </span>
-              )}
-              {professional.isBoosted && professional.boostTier === 'PLUS' && (
-                <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                  Destaque+
-                </span>
-              )}
-              {professional.isBoosted && professional.boostTier === 'BASICO' && (
-                <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                  Destaque
-                </span>
-              )}
+              <BoostBadge isBoosted={professional.isBoosted} boostTier={professional.boostTier} />
               {showTopBadge && (
                 <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
                   Top avaliado

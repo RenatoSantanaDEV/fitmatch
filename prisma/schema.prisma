@@ -100,6 +100,7 @@ model User {
   accounts     Account[]
   authSessions Session[]     @relation("AuthSessions")
   sentMessages Message[]     @relation("MessageSender")
+  profileViewsMade ProfileView[]
 
   @@index([email])
   @@map("users")
@@ -239,6 +240,7 @@ model Professional {
   favoritedByStudents   StudentFavorite[]
   conversations         Conversation[]
   boosts                ProfessionalBoost[]
+  profileViews          ProfileView[]
 
   @@index([locationCity, locationState])
   @@index([isAcceptingClients, averageRating])
@@ -303,6 +305,7 @@ model StudentFavorite {
 
   @@unique([studentId, professionalId])
   @@index([studentId])
+  @@index([professionalId])
   @@map("student_favorites")
 }
 
@@ -438,4 +441,18 @@ model ProfessionalBoost {
 
   @@index([professionalId, status])
   @@map("professional_boosts")
+}
+
+model ProfileView {
+  id             String       @id @default(cuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  viewerUserId   String
+  viewerUser     User         @relation(fields: [viewerUserId], references: [id], onDelete: Cascade)
+  viewDate       DateTime     @db.Date
+  createdAt      DateTime     @default(now())
+
+  @@unique([professionalId, viewerUserId, viewDate])
+  @@index([professionalId, createdAt])
+  @@map("profile_views")
 }

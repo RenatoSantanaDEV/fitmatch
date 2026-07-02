@@ -35,9 +35,14 @@ import { GetUnreadSummaryUseCase } from '../application/use-cases/chat/GetUnread
 import { AuthorizeConversationAccessUseCase } from '../application/use-cases/chat/AuthorizeConversationAccessUseCase';
 import { GetCounterpartDetailsUseCase } from '../application/use-cases/chat/GetCounterpartDetailsUseCase';
 import { PrismaBoostRepository } from '../infrastructure/db/repositories/PrismaBoostRepository';
+import { PrismaProfileViewRepository } from '../infrastructure/db/repositories/PrismaProfileViewRepository';
 import { StripePaymentAdapter } from '../infrastructure/payment/StripePaymentAdapter';
 import { StartBoostCheckoutUseCase } from '../application/use-cases/boost/StartBoostCheckoutUseCase';
 import { ActivateBoostUseCase } from '../application/use-cases/boost/ActivateBoostUseCase';
+import { RecordProfileViewUseCase } from '../application/use-cases/professional/RecordProfileViewUseCase';
+import { GetProfessionalInsightsUseCase } from '../application/use-cases/professional/GetProfessionalInsightsUseCase';
+import { ListFeaturedProfessionalsUseCase } from '../application/use-cases/professional/ListFeaturedProfessionalsUseCase';
+import { ListSimilarProfessionalsUseCase } from '../application/use-cases/professional/ListSimilarProfessionalsUseCase';
 
 const prisma = getPrismaClient();
 
@@ -165,6 +170,7 @@ export const getCounterpartDetailsUseCase = new GetCounterpartDetailsUseCase(
 );
 
 export const boostRepo = new PrismaBoostRepository(prisma);
+export const profileViewRepo = new PrismaProfileViewRepository(prisma);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
 export const paymentAdapter = new StripePaymentAdapter(stripeSecretKey);
 
@@ -175,3 +181,18 @@ export const startBoostCheckoutUseCase = new StartBoostCheckoutUseCase(
 );
 
 export const activateBoostUseCase = new ActivateBoostUseCase(boostRepo, professionalRepo);
+
+export const recordProfileViewUseCase = new RecordProfileViewUseCase(professionalRepo, profileViewRepo);
+
+export const getProfessionalInsightsUseCase = new GetProfessionalInsightsUseCase(
+  professionalRepo,
+  profileViewRepo,
+  studentFavoriteRepo,
+  matchRepo,
+  sessionRepo,
+  boostRepo,
+);
+
+export const listFeaturedProfessionalsUseCase = new ListFeaturedProfessionalsUseCase(professionalRepo, userRepo);
+
+export const listSimilarProfessionalsUseCase = new ListSimilarProfessionalsUseCase(professionalRepo, userRepo);

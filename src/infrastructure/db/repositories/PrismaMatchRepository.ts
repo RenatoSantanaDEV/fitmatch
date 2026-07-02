@@ -56,4 +56,14 @@ export class PrismaMatchRepository implements IMatchRepository {
     });
     return MatchMapper.toDomain(raw);
   }
+
+  async countReceivedByProfessional(professionalId: string): Promise<number> {
+    return this.prisma.match.count({ where: { professionalId } });
+  }
+
+  async countReceivedByProfessionalInRange(professionalId: string, from: Date, to: Date): Promise<number> {
+    return this.prisma.match.count({
+      where: { professionalId, requestedAt: { gte: from, lt: to } },
+    });
+  }
 }

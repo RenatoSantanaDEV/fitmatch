@@ -19,6 +19,7 @@ import { DiscoverProfessionalCard } from './DiscoverProfessionalCard';
 import { FilterSidebar } from './FilterSidebar';
 import { SPECIALTY_CHIP_CONFIGS } from './discoverUiConstants';
 import { SmartMatchModal } from '../profissionais/SmartMatchModal';
+import { FeaturedProfessionalsCarousel } from '../../components/professional/FeaturedProfessionalsCarousel';
 
 const SKELETON_CARD_COUNT = 5;
 const SEARCH_RADIUS_KM = 50;
@@ -71,6 +72,16 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
   const [showModal, setShowModal] = useState(false);
   const [smartMatchIds, setSmartMatchIds] = useState<string[]>([]);
   const [searchContext, setSearchContext] = useState('');
+
+  // Featured (boosted) professionals — shown regardless of the current search/filters.
+  const [featuredProfessionals, setFeaturedProfessionals] = useState<ProfessionalResponseDTO[]>([]);
+
+  useEffect(() => {
+    fetch('/api/professionals/featured?limit=6')
+      .then((r) => r.json())
+      .then((body: { data?: ProfessionalResponseDTO[] }) => setFeaturedProfessionals(body.data ?? []))
+      .catch(() => {});
+  }, []);
 
   const router = useRouter();
   const specialtySearchInputRef = useRef<HTMLInputElement>(null);
@@ -452,6 +463,13 @@ export function DiscoverClient({ defaultCity, defaultState }: DiscoverClientProp
 
           {/* Results column */}
           <div className="min-w-0 flex-1">
+
+            {/* Featured (boosted) professionals — always visible, independent of search */}
+            {featuredProfessionals.length > 0 && (
+              <div className="mb-6">
+                <FeaturedProfessionalsCarousel professionals={featuredProfessionals} />
+              </div>
+            )}
 
             {/* Specialty chips */}
             <div className="mb-4 flex flex-wrap gap-2">
