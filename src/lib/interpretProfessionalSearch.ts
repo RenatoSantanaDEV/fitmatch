@@ -1,4 +1,5 @@
 import { SpecializationType } from '../domain/enums/SpecializationType';
+import { SPECIALIZATION_CATALOG } from '../domain/enums/specializationCatalog';
 import { SessionModality } from '../domain/enums/SessionModality';
 
 export type InterpretedProfessionalSearch = {
@@ -9,20 +10,6 @@ export type InterpretedProfessionalSearch = {
   summary: string;
 };
 
-const SPEC_PATTERNS: { pattern: RegExp; value: SpecializationType }[] = [
-  { pattern: /\b(personal|funcional|muscula[cç][aã]o)\b/i, value: SpecializationType.PERSONAL_TRAINING },
-  { pattern: /\b(yoga)\b/i, value: SpecializationType.YOGA },
-  { pattern: /\b(pilates)\b/i, value: SpecializationType.PILATES },
-  { pattern: /\b(lutas?|muay|boxe|jiu|mma|artes marciais)\b/i, value: SpecializationType.MARTIAL_ARTS },
-  { pattern: /\b(cross\s*fit|crossfit)\b/i, value: SpecializationType.CROSSFIT },
-  { pattern: /\b(nata[cç][aã]o|swim)\b/i, value: SpecializationType.SWIMMING },
-  { pattern: /\b(nutri[cç][aã]o|nutricionista)\b/i, value: SpecializationType.NUTRITION_COACHING },
-  { pattern: /\b(dan[cç]a|dance)\b/i, value: SpecializationType.DANCE },
-  { pattern: /\b(ciclismo|bike)\b/i, value: SpecializationType.CYCLING },
-  { pattern: /\b(reabilita[cç][aã]o|fisio)\b/i, value: SpecializationType.REHABILITATION },
-  { pattern: /\b(medita[cç][aã]o|mindfulness)\b/i, value: SpecializationType.MEDITATION },
-];
-
 function heuristicInterpret(
   query: string,
   cityHint?: string | null,
@@ -30,8 +17,8 @@ function heuristicInterpret(
 ): InterpretedProfessionalSearch {
   const q = query.trim();
   const specs = new Set<SpecializationType>();
-  for (const { pattern, value } of SPEC_PATTERNS) {
-    if (pattern.test(q)) specs.add(value);
+  for (const { keywords, type } of SPECIALIZATION_CATALOG) {
+    if (keywords.test(q)) specs.add(type);
   }
   const modalities: SessionModality[] = [];
   if (/\b(online|remot[oa]|zoom|meet|video)\b/i.test(q)) modalities.push(SessionModality.ONLINE);

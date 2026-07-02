@@ -171,14 +171,19 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+let cachedSystemPrompt: string | undefined;
+
 function loadSystemPrompt(): string {
-  const promptPath = join(
-    process.cwd(),
-    'src',
-    'infrastructure',
-    'ai',
-    'prompts',
-    'matchSystemPrompt.md',
-  );
-  return readFileSync(promptPath, 'utf8');
+  if (cachedSystemPrompt === undefined) {
+    const promptPath = join(
+      process.cwd(),
+      'src',
+      'infrastructure',
+      'ai',
+      'prompts',
+      'matchSystemPrompt.md',
+    );
+    cachedSystemPrompt = readFileSync(promptPath, 'utf8');
+  }
+  return cachedSystemPrompt;
 }

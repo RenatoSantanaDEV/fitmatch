@@ -136,19 +136,27 @@ export function SmartMatchModal({
   studentProfile,
 }: SmartMatchModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const proMap = new Map(professionals.map((p) => [p.id, p]));
 
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<CompatibilityFormData>(EMPTY_COMPATIBILITY_FORM);
   const [rankings, setRankings] = useState<RankingItem[]>([]);
+  const [rankedProfessionals, setRankedProfessionals] = useState<ProfessionalResponseDTO[]>([]);
+  const [relaxed, setRelaxed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
+  // The API returns full data for the professionals it actually ranked — it may
+  // include candidates outside the `professionals` prop (e.g. found via a
+  // specialization broadened search), so it takes priority in the lookup.
+  const proMap = new Map([...professionals, ...rankedProfessionals].map((p) => [p.id, p]));
 
   useEffect(() => {
     if (isOpen) {
       setStep(1);
       setForm({ ...EMPTY_COMPATIBILITY_FORM, ...profileToFormData(studentProfile) });
       setRankings([]);
+      setRankedProfessionals([]);
+      setRelaxed(false);
       setError(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,11 +200,19 @@ export function SmartMatchModal({
         const body = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error ?? 'Erro ao calcular compatibilidade.');
       }
-      const body = (await res.json()) as { rankings?: RankingItem[] };
+      const body = (await res.json()) as {
+        rankings?: RankingItem[];
+        professionals?: ProfessionalResponseDTO[];
+        relaxed?: boolean;
+      };
       if (!Array.isArray(body.rankings) || body.rankings.length === 0) {
-        throw new Error('Nenhum resultado encontrado para o seu perfil.');
+        throw new Error(
+          'Não encontramos nenhum profissional disponível no momento. Tente novamente mais tarde.',
+        );
       }
       setRankings(body.rankings);
+      setRankedProfessionals(Array.isArray(body.professionals) ? body.professionals : []);
+      setRelaxed(!!body.relaxed);
       setStep('results');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.');
@@ -222,8 +238,8 @@ export function SmartMatchModal({
 
       <div
         className="modal-panel-enter relative z-10 flex w-full flex-col overflow-hidden bg-white shadow-xl
-          rounded-t-2xl max-h-[92dvh]
-          sm:rounded-2xl sm:max-w-4xl sm:max-h-[88vh]"
+          rounded-t-2xl h-[92dvh] max-h-[92dvh]
+          sm:rounded-2xl sm:max-w-4xl sm:h-[88vh] sm:max-h-[88vh]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="smart-modal-title"
@@ -258,25 +274,27 @@ export function SmartMatchModal({
         </div>
 
         {/* ── Body ── */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 
           {/* Form steps — shared component */}
           {isFormStep && (
-            <CompatibilityFormSteps
-              step={step}
-              form={form}
-              onFormChange={setForm}
-              onStepChange={setStep}
-              onSubmit={() => void submit()}
-              onCancel={onClose}
-              submitLabel="Ver recomendações"
-              footerNote="Suas respostas ajudam a ordenar os profissionais mais compatíveis."
-            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <CompatibilityFormSteps
+                step={step}
+                form={form}
+                onFormChange={setForm}
+                onStepChange={setStep}
+                onSubmit={() => void submit()}
+                onCancel={onClose}
+                submitLabel="Ver recomendações"
+                footerNote="Suas respostas ajudam a ordenar os profissionais mais compatíveis."
+              />
+            </div>
           )}
 
           {/* Loading */}
           {step === 'loading' && (
-            <div className="flex flex-col items-center px-6 py-14">
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-14">
               <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50">
                 <Loader2 className="size-7 animate-spin text-emerald-600" aria-hidden />
               </div>
@@ -291,6 +309,13 @@ export function SmartMatchModal({
           {/* Results */}
           {step === 'results' && (
             <>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {relaxed && (
+                <p className="mx-3 mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700">
+                  Não encontramos um profissional que bata exatamente com todos os critérios — ampliamos a busca
+                  e trouxemos as melhores opções compatíveis com perfis variados.
+                </p>
+              )}
               <ul className="divide-y divide-slate-50 px-3 py-2">
                 {merged.map((item, idx) => {
                   const pro = item.professional;
@@ -343,8 +368,9 @@ export function SmartMatchModal({
                   );
                 })}
               </ul>
+              </div>
 
-              <div className="border-t border-slate-100 px-4 py-3 flex flex-col gap-2">
+              <div className="flex shrink-0 flex-col gap-2 border-t border-slate-100 bg-white px-4 py-3">
                 <button
                   type="button"
                   onClick={onClose}
@@ -367,7 +393,7 @@ export function SmartMatchModal({
 
           {/* Error */}
           {step === 'error' && (
-            <div className="flex flex-col items-center px-6 py-10 text-center">
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
               <div className="flex size-16 items-center justify-center rounded-full bg-rose-50">
                 <AlertTriangle className="size-8 text-rose-500" aria-hidden />
               </div>

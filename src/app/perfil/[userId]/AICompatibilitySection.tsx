@@ -226,8 +226,7 @@ export function AICompatibilitySection({
           onClick={(e) => { if (e.target === e.currentTarget && step !== 'loading') reset(); }}
         >
           <div
-            className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
-            style={{ maxHeight: '92vh' }}
+            className="relative flex h-[92dvh] max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
           >
             {step !== 'loading' && (
               <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -243,10 +242,11 @@ export function AICompatibilitySection({
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 
               {(step === 1 || step === 2 || step === 3) && (
-                <CompatibilityFormSteps
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <CompatibilityFormSteps
                   step={step}
                   form={form}
                   onFormChange={setForm}
@@ -255,10 +255,11 @@ export function AICompatibilitySection({
                   onCancel={reset}
                   footerNote="Baseado no seu perfil · Não substitui avaliação presencial"
                 />
+                </div>
               )}
 
               {step === 'loading' && (
-                <div className="flex flex-col items-center px-6 py-12">
+                <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
                   <div className="flex size-16 items-center justify-center rounded-full bg-slate-100">
                     <Loader2 className="size-8 animate-spin text-slate-500" aria-hidden />
                   </div>

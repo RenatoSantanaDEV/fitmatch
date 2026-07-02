@@ -1,6 +1,7 @@
 import { IProfessionalRepository, PaginatedResult } from '../../ports/output/IProfessionalRepository';
 import { IUserRepository } from '../../ports/output/IUserRepository';
 import { ListProfessionalsDTO, ProfessionalResponseDTO } from '../../dtos/professional/ProfessionalDTO';
+import { toProfessionalResponseDTO } from '../../dtos/professional/toProfessionalResponseDTO';
 
 export class ListProfessionalsUseCase {
   constructor(
@@ -29,26 +30,7 @@ export class ListProfessionalsUseCase {
 
     return {
       ...result,
-      data: result.data.map((p) => ({
-        id: p.id,
-        userId: p.userId,
-        displayName: profiles.get(p.userId)?.name ?? 'Educador',
-        avatarUrl: profiles.get(p.userId)?.avatarUrl ?? null,
-        bio: p.bio,
-        areas: p.areas,
-        location: p.location,
-        modalities: p.modalities,
-        sessionPrice: p.sessionPrice,
-        yearsExperience: p.yearsExperience,
-        isVerified: p.isVerified,
-        isAcceptingClients: p.isAcceptingClients,
-        averageRating: p.averageRating,
-        totalReviews: p.totalReviews,
-        isBoosted: !!p.boostExpiresAt && p.boostExpiresAt > new Date(),
-        boostTier: (p.boostTier as 'BASICO' | 'PLUS' | 'PREMIUM' | null) ?? null,
-        boostExpiresAt: p.boostExpiresAt ?? null,
-        createdAt: p.createdAt,
-      })),
+      data: result.data.map((p) => toProfessionalResponseDTO(p, profiles.get(p.userId))),
     };
   }
 }

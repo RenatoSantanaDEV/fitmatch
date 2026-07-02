@@ -3,6 +3,8 @@
 import {
   Activity,
   ArrowRight,
+  Bike,
+  BrainCircuit,
   ChevronLeft,
   Dumbbell,
   HeartPulse,
@@ -10,18 +12,24 @@ import {
   Lock,
   MapPin,
   Monitor,
+  Music,
+  Salad,
   Scale,
   Shuffle,
+  Swords,
   Users,
+  Waves,
   Zap,
 } from 'lucide-react';
 import type { ElementType } from 'react';
+import { SPECIALIZATION_CATALOG } from '../../domain/enums/specializationCatalog';
 
 /* ─────────────────────────────── types */
 
 export type CompatibilityFormData = {
   mainGoal: string;
   level: string;
+  specialization: string;
   preferredModality: string;
   trainerStyle: string;
   frequency: string;
@@ -32,6 +40,7 @@ export type CompatibilityFormData = {
 export const EMPTY_COMPATIBILITY_FORM: CompatibilityFormData = {
   mainGoal: '',
   level: '',
+  specialization: '',
   preferredModality: '',
   trainerStyle: '',
   frequency: '',
@@ -58,6 +67,28 @@ export const COMPATIBILITY_GOALS: GoalOption[] = [
   { id: 'performance',     label: 'Performance esportiva',    desc: 'Melhorar desempenho em esportes e competições',  icon: Zap        },
   { id: 'saude_qualidade', label: 'Saúde e qualidade de vida', desc: 'Mais bem-estar, equilíbrio e longevidade',      icon: Leaf       },
 ];
+
+// Icons are a UI-only concern, so they're assigned here rather than in the
+// shared domain catalog (which only owns id/label/keyword matching).
+const SPECIALIZATION_ICONS: Record<string, ElementType> = {
+  personal: Dumbbell,
+  yoga: Leaf,
+  pilates: Activity,
+  crossfit: Zap,
+  natacao: Waves,
+  lutas: Swords,
+  danca: Music,
+  ciclismo: Bike,
+  reabilitacao: HeartPulse,
+  nutricao: Salad,
+  meditacao: BrainCircuit,
+};
+
+export const COMPATIBILITY_SPECIALIZATIONS = SPECIALIZATION_CATALOG.map((entry) => ({
+  id: entry.id,
+  label: entry.label,
+  icon: SPECIALIZATION_ICONS[entry.id] ?? Activity,
+}));
 
 const LEVELS = [
   { id: 'iniciante',    label: 'Iniciante',     desc: 'Estou começando agora'         },
@@ -216,7 +247,7 @@ function StepFooter({
   submitLabel?: string;
 }) {
   return (
-    <div className="mt-6 flex items-center justify-between border-t border-slate-100 pb-1 pt-4">
+    <div className="flex shrink-0 items-center justify-between border-t border-slate-100 bg-white pb-1 pt-4">
       <button
         type="button"
         onClick={isFirstStep ? onCancel : onBack}
@@ -276,7 +307,8 @@ export function CompatibilityFormSteps({
   /* ── Step 1 ── */
   if (step === 1) {
     return (
-      <div className="px-6 py-5">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
         <StepHeader current={1} total={3} />
 
         <h3 className="text-lg font-bold text-slate-900">
@@ -333,6 +365,28 @@ export function CompatibilityFormSteps({
           </div>
         </div>
 
+        <div className="mt-6">
+          <p className="mb-1 text-sm font-semibold text-slate-700">
+            Alguma modalidade específica em mente?{' '}
+            <span className="font-normal text-slate-400">(opcional)</span>
+          </p>
+          <p className="mb-3 text-xs text-slate-500">
+            Ex.: natação, yoga, crossfit — ajuda a priorizar professores dessa área.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {COMPATIBILITY_SPECIALIZATIONS.map((s) => (
+              <FrequencyChip
+                key={s.id}
+                option={s}
+                selected={form.specialization === s.id}
+                onClick={() => set({ specialization: form.specialization === s.id ? '' : s.id })}
+              />
+            ))}
+          </div>
+        </div>
+        </div>
+
+        <div className="shrink-0 px-6 pb-5">
         <StepFooter
           canAdvance={canStep1}
           isFirstStep
@@ -341,6 +395,7 @@ export function CompatibilityFormSteps({
           onCancel={onCancel}
           onAdvance={() => onStepChange(2)}
         />
+        </div>
       </div>
     );
   }
@@ -348,7 +403,8 @@ export function CompatibilityFormSteps({
   /* ── Step 2 ── */
   if (step === 2) {
     return (
-      <div className="px-6 py-5">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
         <StepHeader current={2} total={3} />
 
         <h3 className="text-lg font-bold text-slate-900">Suas preferências</h3>
@@ -394,7 +450,9 @@ export function CompatibilityFormSteps({
             ))}
           </div>
         </div>
+        </div>
 
+        <div className="shrink-0 px-6 pb-5">
         <StepFooter
           canAdvance={canStep2}
           isFirstStep={false}
@@ -403,13 +461,15 @@ export function CompatibilityFormSteps({
           onCancel={onCancel}
           onAdvance={() => onStepChange(3)}
         />
+        </div>
       </div>
     );
   }
 
   /* ── Step 3 ── */
   return (
-    <div className="px-6 py-5">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
       <StepHeader current={3} total={3} />
 
       <h3 className="text-lg font-bold text-slate-900">Detalhes finais</h3>
@@ -460,7 +520,9 @@ export function CompatibilityFormSteps({
           className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 placeholder-slate-400 transition focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
         />
       </div>
+      </div>
 
+      <div className="shrink-0 px-6 pb-5">
       <StepFooter
         canAdvance={canStep3}
         isFirstStep={false}
@@ -470,6 +532,7 @@ export function CompatibilityFormSteps({
         onAdvance={onSubmit}
         submitLabel={submitLabel}
       />
+      </div>
     </div>
   );
 }
