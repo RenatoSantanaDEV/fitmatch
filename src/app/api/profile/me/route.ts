@@ -5,8 +5,12 @@ import { userRepo } from '../../../../container';
 import { badRequest, handleError, noContent, unauthorized } from '../../../../lib/apiResponse';
 
 const schema = z.object({
-  name: z.string().min(2).max(120).optional(),
-  phone: z.string().max(20).nullable().optional(),
+  name: z.string().min(2, 'Nome muito curto').max(120, 'Nome muito longo').optional(),
+  phone: z
+    .string()
+    .max(30, 'Telefone deve ter no máximo 30 caracteres')
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(req: NextRequest) {

@@ -41,7 +41,6 @@ function heuristicInterpret(
   const parts: string[] = [];
   if (specs.size) parts.push(`Especialidades: ${[...specs].join(', ')}`);
   if (modalities.length) parts.push(`Modalidade: ${modalities.join(', ')}`);
-  if (!parts.length) parts.push('Busca por texto livre (sem palavras-chave específicas)');
 
   return {
     specializations: [...specs],

@@ -237,7 +237,7 @@ export function MensagensClient({ currentUserId, initialConversationId }: Props)
         </aside>
 
         <main
-          className={`flex-1 flex-col bg-slate-50 ${selectedId ? 'flex' : 'hidden sm:flex'}`}
+          className={`min-h-0 flex-1 flex-col bg-slate-50 ${selectedId ? 'flex' : 'hidden sm:flex'}`}
         >
           {selectedConversation ? (
             <>

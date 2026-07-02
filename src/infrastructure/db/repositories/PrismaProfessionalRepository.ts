@@ -5,6 +5,7 @@ import {
   PaginatedResult,
 } from '../../../application/ports/output/IProfessionalRepository';
 import { Professional } from '../../../domain/entities/Professional';
+import { SessionModality } from '../../../domain/enums/SessionModality';
 import { ProfessionalMapper } from '../mappers/ProfessionalMapper';
 
 const areasInclude = { areas: { include: { area: true } } } as const;
@@ -176,15 +177,19 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
       const now = new Date();
       const scored = rows
         .map((r) => {
+          const offersRemotely =
+            r.modalities.includes(SessionModality.ONLINE) || r.modalities.includes(SessionModality.HYBRID);
           const d = haversineKm(lat, lng, r.locationLat ?? null, r.locationLng ?? null);
-          return { r, d };
+          return { r, d, offersRemotely };
         })
-        .filter((x) => x.d !== null && x.d <= radius)
+        // Professionals who teach online/hybrid aren't bound by physical distance —
+        // only in-person-only professionals must fall within the search radius.
+        .filter((x) => x.offersRemotely || (x.d !== null && x.d <= radius))
         .sort((a, b) => {
           const aBoost = a.r.boostExpiresAt && a.r.boostExpiresAt > now ? 1 : 0;
           const bBoost = b.r.boostExpiresAt && b.r.boostExpiresAt > now ? 1 : 0;
           if (bBoost !== aBoost) return bBoost - aBoost;
-          return a.d! - b.d!;
+          return (a.d ?? Infinity) - (b.d ?? Infinity);
         });
       const total = scored.length;
       const slice = scored.slice(skip, skip + limit);

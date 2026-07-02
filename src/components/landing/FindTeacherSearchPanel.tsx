@@ -13,13 +13,16 @@ export function FindTeacherSearchPanel() {
       </p>
 
       {/* Search bar */}
-      <div className="flex items-stretch gap-2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
-        <div className="flex min-h-[46px] flex-1 items-center gap-3 rounded-lg px-4">
+      <div className="flex items-stretch gap-2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm transition focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+        <label className="flex min-h-[46px] flex-1 cursor-text items-center gap-3 rounded-lg px-4">
           <Search className="size-4 shrink-0 text-slate-400" aria-hidden />
-          <span className="text-left text-sm text-slate-400">
-            Modalidade, objetivo ou especialidade…
-          </span>
-        </div>
+          <input
+            type="text"
+            aria-label="Modalidade, objetivo ou especialidade"
+            placeholder="Modalidade, objetivo ou especialidade…"
+            className="w-full bg-transparent text-left text-sm text-slate-700 placeholder-slate-400 outline-none"
+          />
+        </label>
         <Link
           href="/descobrir"
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.99]"

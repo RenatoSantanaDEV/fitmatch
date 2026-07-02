@@ -93,7 +93,7 @@ export function ChatThread({
     conversation.counterpart.role === 'PROFESSIONAL' ? 'Profissional' : 'Aluno';
 
   return (
-    <div className="flex h-full flex-col bg-slate-50">
+    <div className="flex min-h-0 flex-1 flex-col bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-4xl items-center gap-3 px-4 py-3.5 sm:px-8">
           <button

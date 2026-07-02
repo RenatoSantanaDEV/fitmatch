@@ -29,7 +29,7 @@ const PROF_TABS = [
   { id: 'servicos' as const, label: 'Serviços' },
   { id: 'localizacao' as const, label: 'Localização' },
   { id: 'certificados' as const, label: 'Certificados' },
-  { id: 'impulso' as const, label: '⚡ Impulso' },
+  { id: 'impulso' as const, label: 'Impulso' },
 ] as const;
 
 type ProfTabId = (typeof PROF_TABS)[number]['id'];
@@ -1497,7 +1497,6 @@ export function PerfilProfissionalContent({
           <section className={sectionCardClass}>
             <div className="border-b border-slate-100 px-5 py-4 sm:px-8">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-                <Zap className="size-5 text-yellow-500" aria-hidden />
                 Impulsionar meu perfil
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -1548,7 +1547,7 @@ export function PerfilProfissionalContent({
                     price: 'R$ 100',
                     days: 30,
                     color: 'yellow',
-                    benefits: ['Tudo do Destaque+', 'Maior bônus no ranking IA', 'Selo ⚡ "Super Destaque" no card', '30 dias de visibilidade'],
+                    benefits: ['Tudo do Destaque+', 'Maior bônus no ranking IA', 'Selo "Super Destaque" no card', '30 dias de visibilidade'],
                   },
                 ].map(({ tier, label, price, days, color, benefits }) => (
                   <div

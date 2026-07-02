@@ -20,6 +20,39 @@ import {
 } from 'lucide-react';
 import { OpenAuthModal } from '../auth/OpenAuthModal';
 import { FindTeacherSearchPanel } from './FindTeacherSearchPanel';
+import { SESSION_MODALITY_LABELS } from '../../lib/sessionModalityLabels';
+import { resolveAvatarUrl } from '../../lib/resolveAvatarUrl';
+import type { SessionModality } from '../../domain/enums/SessionModality';
+
+export interface FeaturedProfessional {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  areas: { id: string; nome: string }[];
+  location: { city: string; state: string };
+  modalities: SessionModality[];
+  sessionPrice: { min: number; max: number; currency: string };
+  isVerified: boolean;
+  averageRating: number | null;
+  totalReviews: number;
+}
+
+function getAvatarInitials(fullName: string): string {
+  return fullName
+    .split(' ')
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
+
+function formatStartingPrice(min: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(min);
+  } catch {
+    return `${currency} ${min}`;
+  }
+}
 
 const howItWorks = [
   {
@@ -72,7 +105,13 @@ const features = [
   },
 ];
 
-export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function HomePage({
+  isAuthenticated,
+  featuredProfessional,
+}: {
+  isAuthenticated: boolean;
+  featuredProfessional: FeaturedProfessional | null;
+}) {
   return (
     <main className="flex flex-1 flex-col bg-white">
 
@@ -84,11 +123,6 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
 
           {/* Left — copy + actions */}
           <div className="flex flex-col gap-7">
-            <span className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-              Marketplace de Educação Física
-            </span>
-
             <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
               Encontre o professor de{' '}
               educação física{' '}
@@ -97,7 +131,7 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
 
             <p className="max-w-lg text-lg leading-relaxed text-slate-500">
               A FitMatch conecta alunos a educadores físicos verificados com base em seus objetivos,
-              localização e disponibilidade — de forma simples e gratuita.
+              localização e disponibilidade.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -139,79 +173,123 @@ export function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
           </div>
 
-          {/* Right — mock teacher card */}
+          {/* Right — featured teacher card */}
           <div className="flex flex-col">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              {/* Header */}
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white">
-                  C
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-slate-900">Carlos Mendes</span>
-                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                      <BadgeCheck className="size-3" aria-hidden />
-                      Verificado
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-sm text-slate-500">Personal Trainer · CREF 12345/SP</p>
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="size-3.5 fill-amber-400 text-amber-400"
-                        aria-hidden
+            {featuredProfessional ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-start gap-4">
+                  {(() => {
+                    const avatarUrl = resolveAvatarUrl(
+                      featuredProfessional.userId,
+                      featuredProfessional.avatarUrl,
+                    );
+                    return avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt={featuredProfessional.displayName}
+                        className="h-14 w-14 shrink-0 rounded-full object-cover"
                       />
-                    ))}
-                    <span className="text-sm font-semibold text-slate-800">4.9</span>
-                    <span className="text-xs text-slate-400">(48 avaliações)</span>
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white">
+                        {getAvatarInitials(featuredProfessional.displayName)}
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-slate-900">{featuredProfessional.displayName}</span>
+                      {featuredProfessional.isVerified && (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                          <BadgeCheck className="size-3" aria-hidden />
+                          Verificado
+                        </span>
+                      )}
+                    </div>
+                    {featuredProfessional.areas[0] && (
+                      <p className="mt-0.5 text-sm text-slate-500">{featuredProfessional.areas[0].nome}</p>
+                    )}
+                    {featuredProfessional.averageRating != null ? (
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`size-3.5 ${
+                              i < Math.round(featuredProfessional.averageRating!)
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'fill-slate-200 text-slate-200'
+                            }`}
+                            aria-hidden
+                          />
+                        ))}
+                        <span className="text-sm font-semibold text-slate-800">
+                          {featuredProfessional.averageRating.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          ({featuredProfessional.totalReviews} avaliações)
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="mt-1.5 text-xs italic text-slate-400">Sem avaliações ainda</p>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              {/* Specialty tags */}
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {['Hipertrofia', 'Emagrecimento', 'Funcional'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
+                {/* Specialty tags */}
+                {featuredProfessional.areas.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {featuredProfessional.areas.slice(0, 3).map((area) => (
+                      <span
+                        key={area.id}
+                        className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
+                      >
+                        {area.nome}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Info */}
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden />
+                    {featuredProfessional.location.city}, {featuredProfessional.location.state}
+                  </div>
+                  {featuredProfessional.modalities.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <Monitor className="size-3.5 shrink-0 text-slate-400" aria-hidden />
+                      {featuredProfessional.modalities.map((m) => SESSION_MODALITY_LABELS[m]).join(' · ')}
+                    </div>
+                  )}
+                </div>
+
+                {/* Price + CTA */}
+                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <div>
+                    <span className="text-lg font-bold text-slate-900">
+                      {formatStartingPrice(
+                        featuredProfessional.sessionPrice.min,
+                        featuredProfessional.sessionPrice.currency,
+                      )}
+                    </span>
+                    <span className="text-sm text-slate-400">/sessão</span>
+                  </div>
+                  <Link
+                    href={`/perfil/${featuredProfessional.userId}`}
+                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                   >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Info */}
-              <div className="mt-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden />
-                  São Paulo, SP
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Monitor className="size-3.5 shrink-0 text-slate-400" aria-hidden />
-                  Presencial · Online
+                    Ver perfil
+                  </Link>
                 </div>
               </div>
-
-              {/* Price + CTA */}
-              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                <div>
-                  <span className="text-lg font-bold text-slate-900">R$ 90</span>
-                  <span className="text-sm text-slate-400">/sessão</span>
-                </div>
-                <Link
-                  href="/descobrir"
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                >
-                  Ver perfil
-                </Link>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Novos professores em breve</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Estamos cadastrando educadores verificados na sua região.
+                </p>
               </div>
-            </div>
-
-            <p className="mt-2.5 text-center text-xs text-slate-400">
-              +50 professores verificados disponíveis
-            </p>
+            )}
           </div>
         </div>
       </section>
