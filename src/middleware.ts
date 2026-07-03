@@ -28,6 +28,8 @@ function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(p)) return true;
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (pathname.startsWith('/api/auth/')) return true;
+  if (pathname.startsWith('/api/professionals/')) return true;
+  if (pathname.startsWith('/api/geocode/')) return true;
   if (pathname === '/api/student-signup') return true;
   return false;
 }

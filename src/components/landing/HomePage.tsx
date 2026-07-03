@@ -6,10 +6,6 @@ import {
   Zap,
   Shield,
   MessageSquare,
-  Brain,
-  BadgeCheck,
-  Gift,
-  Languages,
   Search,
   Sparkles,
   CheckCircle2,
@@ -17,7 +13,8 @@ import {
 } from 'lucide-react';
 import { OpenAuthModal } from '../auth/OpenAuthModal';
 import { FindTeacherSearchPanel } from './FindTeacherSearchPanel';
-import { FeaturedProfessionalsCarousel } from '../professional/FeaturedProfessionalsCarousel';
+import { HomeProfessionalsShowcase } from './HomeProfessionalsShowcase';
+import type { HomeInitialLocation } from './homeLocationTypes';
 import type { ProfessionalResponseDTO } from '../../application/dtos/professional/ProfessionalDTO';
 
 const howItWorks = [
@@ -44,122 +41,81 @@ const howItWorks = [
   },
 ];
 
-const features = [
-  {
-    icon: Brain,
-    title: 'Matching por IA',
-    desc: 'Algoritmo de compatibilidade que analisa objetivos, orçamento, localização e estilo de treino.',
-    iconClass: 'bg-violet-100 text-violet-700',
-  },
-  {
-    icon: BadgeCheck,
-    title: 'Perfis verificados',
-    desc: 'Todos os professores passam por verificação de credenciais e são avaliados pelos alunos.',
-    iconClass: 'bg-emerald-100 text-emerald-700',
-  },
-  {
-    icon: Gift,
-    title: 'Gratuito para alunos',
-    desc: 'Acesso completo à plataforma, buscas e recomendações sem nenhum custo para estudantes.',
-    iconClass: 'bg-orange-100 text-orange-700',
-  },
-  {
-    icon: Languages,
-    title: 'Explicações em português',
-    desc: 'Cada recomendação vem acompanhada de um texto claro explicando por que aquele professor foi indicado.',
-    iconClass: 'bg-sky-100 text-sky-700',
-  },
-];
-
 export function HomePage({
   isAuthenticated,
   featuredProfessionals,
+  initialLocation,
 }: {
   isAuthenticated: boolean;
   featuredProfessionals: ProfessionalResponseDTO[];
+  initialLocation?: HomeInitialLocation;
 }) {
   return (
     <main className="flex flex-1 flex-col bg-white">
 
-      {/* ===================================================
-          HERO
-      =================================================== */}
+      {/* HERO */}
       <section className="bg-gradient-to-b from-emerald-50/60 to-white">
-        <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-[1fr_420px] lg:gap-16 lg:py-24 lg:px-10">
+        <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-7 px-6 py-16 lg:px-10 lg:py-24">
+          <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+            Encontre o professor de{' '}
+            educação física{' '}
+            <span className="text-emerald-600">certo para você</span>
+          </h1>
 
-          {/* Left — copy + actions */}
-          <div className="flex flex-col gap-7">
-            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
-              Encontre o professor de{' '}
-              educação física{' '}
-              <span className="text-emerald-600">certo para você</span>
-            </h1>
+          <p className="max-w-xl text-lg leading-relaxed text-slate-500">
+            A FitMatch conecta alunos a educadores físicos verificados com base em seus objetivos,
+            localização e disponibilidade.
+          </p>
 
-            <p className="max-w-lg text-lg leading-relaxed text-slate-500">
-              A FitMatch conecta alunos a educadores físicos verificados com base em seus objetivos,
-              localização e disponibilidade.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              {isAuthenticated ? (
-                <FindTeacherSearchPanel />
-              ) : (
-                <>
-                  <OpenAuthModal
-                    mode="register"
-                    callbackUrl="/descobrir"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
-                  >
-                    Começar grátis
-                    <ArrowRight className="size-4" aria-hidden />
-                  </OpenAuthModal>
-                  <OpenAuthModal
-                    mode="login"
-                    callbackUrl="/descobrir"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98]"
-                  >
-                    Já tenho conta
-                  </OpenAuthModal>
-                </>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap gap-8 pt-6">
-              {[
-                { value: '50+', label: 'Professores verificados' },
-                { value: '12', label: 'Especialidades' },
-                { value: '100%', label: 'Grátis para alunos' },
-              ].map((s) => (
-                <div key={s.label}>
-                  <p className="text-2xl font-extrabold text-emerald-600">{s.value}</p>
-                  <p className="mt-0.5 text-xs font-medium text-slate-400">{s.label}</p>
-                </div>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-3">
+            {isAuthenticated ? (
+              <FindTeacherSearchPanel />
+            ) : (
+              <>
+                <OpenAuthModal
+                  mode="register"
+                  callbackUrl="/descobrir"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                >
+                  Começar grátis
+                  <ArrowRight className="size-4" aria-hidden />
+                </OpenAuthModal>
+                <OpenAuthModal
+                  mode="login"
+                  callbackUrl="/descobrir"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98]"
+                >
+                  Já tenho conta
+                </OpenAuthModal>
+              </>
+            )}
           </div>
 
-          {/* Right — featured professionals carousel */}
-          <div className="flex flex-col">
-            {featuredProfessionals.length > 0 ? (
-              <FeaturedProfessionalsCarousel professionals={featuredProfessionals} />
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Novos professores em breve</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Estamos cadastrando educadores verificados na sua região.
-                </p>
+          <div className="flex flex-wrap gap-8 pt-6">
+            {[
+              { value: '50+', label: 'Professores verificados' },
+              { value: '12', label: 'Especialidades' },
+              { value: '100%', label: 'Grátis para alunos' },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-2xl font-extrabold text-emerald-600">{s.value}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-400">{s.label}</p>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ===================================================
-          ROLE SELECTION (unauthenticated only)
-      =================================================== */}
+      {/* PROFESSORES — destaque principal */}
+      <HomeProfessionalsShowcase
+        featuredProfessionals={featuredProfessionals}
+        initialLocation={initialLocation}
+        isAuthenticated={isAuthenticated}
+      />
+
+      {/* ROLE SELECTION (unauthenticated only) */}
       {!isAuthenticated && (
-        <section className="border-b border-slate-100 bg-slate-50 py-16 sm:py-20">
+        <section className="border-b border-slate-100 bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
             <div className="mb-10 text-center">
               <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
@@ -172,7 +128,6 @@ export function HomePage({
             </div>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {/* Student */}
               <OpenAuthModal
                 mode="login"
                 callbackUrl="/descobrir"
@@ -196,7 +151,6 @@ export function HomePage({
                 </span>
               </OpenAuthModal>
 
-              {/* Professional */}
               <Link
                 href="/dar-aulas"
                 className="flex w-full flex-col rounded-xl border border-slate-200 border-t-4 border-t-slate-700 bg-white p-8 text-left transition hover:border-slate-300 hover:shadow-md"
@@ -223,93 +177,8 @@ export function HomePage({
         </section>
       )}
 
-      {/* ===================================================
-          HOW IT WORKS
-      =================================================== */}
-      <section className="border-b border-slate-100 bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-          <div className="mb-16 text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-              É simples assim
-            </span>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Como funciona a FitMatch
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
-              Do cadastro ao primeiro contato com seu professor em menos de 5 minutos.
-            </p>
-          </div>
-
-          <div className="relative grid grid-cols-1 gap-12 sm:grid-cols-3">
-            {/* Connecting line */}
-            <div
-              className="pointer-events-none absolute left-0 right-0 top-[18px] hidden h-px bg-slate-200 sm:block"
-              aria-hidden
-            />
-
-            {howItWorks.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="flex flex-col gap-5">
-                  <div className="flex items-center gap-4">
-                    <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-extrabold text-white">
-                      {item.step}
-                    </span>
-                  </div>
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.iconClass}`}>
-                    <Icon className="size-5" aria-hidden />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-extrabold text-slate-900">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================
-          WHY FITMATCH
-      =================================================== */}
-      <section className="border-b border-slate-100 bg-slate-50 py-16 sm:py-24">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-          <div className="mb-12 text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-              Nossos diferenciais
-            </span>
-            <h2 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Por que escolher a FitMatch?
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${f.iconClass}`}>
-                    <Icon className="size-5" aria-hidden />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">{f.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================
-          DUAS FORMAS DE BUSCAR (âncora de ajuda)
-      =================================================== */}
-      <section id="ajuda-fitmatch" className="border-b border-slate-100 bg-white py-16 sm:py-20">
+      {/* DUAS FORMAS DE BUSCAR */}
+      <section id="ajuda-fitmatch" className="border-b border-slate-100 bg-slate-50 py-16 sm:py-20">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mb-10 text-center">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
@@ -321,7 +190,6 @@ export function HomePage({
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {/* Busca manual */}
             <div className="flex flex-col gap-5 rounded-xl border border-slate-200 border-t-4 border-t-emerald-500 bg-white p-8 shadow-sm">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
                 <Search className="size-5" aria-hidden />
@@ -355,7 +223,6 @@ export function HomePage({
               )}
             </div>
 
-            {/* IA Recomendações */}
             <div className="flex flex-col gap-5 rounded-xl border border-slate-200 border-t-4 border-t-violet-500 bg-white p-8 shadow-sm">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
                 <Sparkles className="size-5" aria-hidden />
@@ -392,11 +259,53 @@ export function HomePage({
         </div>
       </section>
 
-      {/* ===================================================
-          PROBLEMA → SOLUÇÃO
-      =================================================== */}
+      {/* COMO FUNCIONA — penúltima seção */}
+      <section className="border-b border-slate-100 bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+          <div className="mb-16 text-center">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
+              É simples assim
+            </span>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Como funciona a FitMatch
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+              Do cadastro ao primeiro contato com seu professor em menos de 5 minutos.
+            </p>
+          </div>
+
+          <div className="relative grid grid-cols-1 gap-12 sm:grid-cols-3">
+            <div
+              className="pointer-events-none absolute left-0 right-0 top-[18px] hidden h-px bg-slate-200 sm:block"
+              aria-hidden
+            />
+
+            {howItWorks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="flex flex-col gap-5">
+                  <div className="flex items-center gap-4">
+                    <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-extrabold text-white">
+                      {item.step}
+                    </span>
+                  </div>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.iconClass}`}>
+                    <Icon className="size-5" aria-hidden />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-extrabold text-slate-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* PROBLEMA → SOLUÇÃO (última seção — não autenticado) */}
       {!isAuthenticated && (
-        <section className="border-b border-slate-100 bg-slate-50 py-20 sm:py-28">
+        <section className="bg-slate-50 py-20 sm:py-28">
           <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
             <div className="mb-14 text-center">
               <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
@@ -452,7 +361,7 @@ export function HomePage({
         </section>
       )}
 
-      {/* CTA para usuário autenticado */}
+      {/* CTA final — autenticado */}
       {isAuthenticated && (
         <section className="bg-emerald-600 py-16 sm:py-20">
           <div className="mx-auto max-w-[1320px] px-6 text-center lg:px-10">

@@ -36,4 +36,5 @@ export interface IProfessionalRepository {
   updateRating(professionalId: string, average: number, total: number): Promise<void>;
   countActive(): Promise<number>;
   findFeatured(limit: number): Promise<Professional[]>;
+  findBestValue(limit: number): Promise<Professional[]>;
 }

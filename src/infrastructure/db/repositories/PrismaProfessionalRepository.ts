@@ -245,4 +245,31 @@ export class PrismaProfessionalRepository implements IProfessionalRepository {
     });
     return sorted.slice(0, limit).map(ProfessionalMapper.toDomain);
   }
+
+  async findBestValue(limit: number): Promise<Professional[]> {
+    const rows = await this.prisma.professional.findMany({
+      where: {
+        isAcceptingClients: true,
+        averageRating: { gt: 0 },
+        priceMin: { gt: 0 },
+        totalReviews: { gte: 1 },
+      },
+      include: areasInclude,
+      take: 100,
+    });
+
+    const sorted = [...rows].sort((a, b) => bestValueScore(b) - bestValueScore(a));
+    return sorted.slice(0, limit).map(ProfessionalMapper.toDomain);
+  }
+}
+
+function bestValueScore(row: {
+  averageRating: number | null;
+  totalReviews: number;
+  priceMin: number;
+}): number {
+  const rating = row.averageRating ?? 0;
+  const price = row.priceMin / 100;
+  if (price <= 0 || rating <= 0) return 0;
+  return (rating * Math.log10(row.totalReviews + 2)) / price;
 }

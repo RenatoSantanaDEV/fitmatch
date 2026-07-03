@@ -43,6 +43,8 @@ import { RecordProfileViewUseCase } from '../application/use-cases/professional/
 import { GetProfessionalInsightsUseCase } from '../application/use-cases/professional/GetProfessionalInsightsUseCase';
 import { ListFeaturedProfessionalsUseCase } from '../application/use-cases/professional/ListFeaturedProfessionalsUseCase';
 import { ListSimilarProfessionalsUseCase } from '../application/use-cases/professional/ListSimilarProfessionalsUseCase';
+import { ListNearbyProfessionalsUseCase } from '../application/use-cases/professional/ListNearbyProfessionalsUseCase';
+import { ListBestValueProfessionalsUseCase } from '../application/use-cases/professional/ListBestValueProfessionalsUseCase';
 
 const prisma = getPrismaClient();
 
@@ -196,3 +198,7 @@ export const getProfessionalInsightsUseCase = new GetProfessionalInsightsUseCase
 export const listFeaturedProfessionalsUseCase = new ListFeaturedProfessionalsUseCase(professionalRepo, userRepo);
 
 export const listSimilarProfessionalsUseCase = new ListSimilarProfessionalsUseCase(professionalRepo, userRepo);
+
+export const listNearbyProfessionalsUseCase = new ListNearbyProfessionalsUseCase(professionalRepo, userRepo);
+
+export const listBestValueProfessionalsUseCase = new ListBestValueProfessionalsUseCase(professionalRepo, userRepo);
