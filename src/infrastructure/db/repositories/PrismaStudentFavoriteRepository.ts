@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { IStudentFavoriteRepository } from '../../../application/ports/output/IStudentFavoriteRepository';
 
-export class PrismaStudentFavoriteRepository {
+export class PrismaStudentFavoriteRepository implements IStudentFavoriteRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async listProfessionalIds(studentId: string): Promise<string[]> {

@@ -118,7 +118,7 @@ export function SiteHeader() {
                   )}
                 </Link>
                 <Link
-                  href="/descobrir"
+                  href="/favoritos"
                   className="header-icon-btn flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   title="Favoritos"
                 >
@@ -205,7 +205,7 @@ export function SiteHeader() {
                           </span>
                         )}
                       </Link>
-                      <Link href="/descobrir" role="menuitem" className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
+                      <Link href="/favoritos" role="menuitem" className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" onClick={() => setAccountOpen(false)}>
                         <Heart className="size-4 shrink-0 text-slate-400" aria-hidden />
                         Favoritos
                       </Link>

@@ -9,7 +9,7 @@ const RATE_WINDOW_MS = 60 * 60 * 1000;
 const RATE_KEY_PREFIX = 'compat';
 
 export interface StudentCompatibilityForm {
-  mainGoal: string;
+  mainGoal: string[];
   level: string;
   preferredModality: string;
   trainerStyle: string;
@@ -79,7 +79,7 @@ export async function POST(
     return badRequest('Corpo da requisição inválido.');
   }
 
-  if (!body.mainGoal || !body.level || !body.preferredModality || !body.trainerStyle || !body.frequency || !body.emotionalGoal) {
+  if (!body.mainGoal || body.mainGoal.length === 0 || !body.level || !body.preferredModality || !body.trainerStyle || !body.frequency || !body.emotionalGoal) {
     return badRequest('Campos obrigatórios ausentes.');
   }
 

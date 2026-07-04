@@ -187,6 +187,22 @@ export function AICompatibilitySection({
     onExternalClose?.();
   }
 
+  useEffect(() => {
+    if (step === 'idle') return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [step]);
+
+  useEffect(() => {
+    if (step === 'idle') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && step !== 'loading') reset();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   if (isOwnProfile) return null;
 
   const scoreStyle = result ? getScoreStyle(result.score) : null;
@@ -222,19 +238,40 @@ export function AICompatibilitySection({
 
       {step !== 'idle' && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
           onClick={(e) => { if (e.target === e.currentTarget && step !== 'loading') reset(); }}
         >
+          <div className="modal-overlay-enter absolute inset-0 bg-slate-900/60 backdrop-blur-sm" aria-hidden />
+
           <div
-            className="relative flex h-[92dvh] max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+            className="modal-panel-enter relative z-10 flex w-full flex-col overflow-hidden bg-white shadow-xl
+              rounded-t-2xl h-[92dvh] max-h-[92dvh]
+              sm:rounded-2xl sm:max-w-4xl sm:h-[88vh] sm:max-h-[88vh]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="compatibility-modal-title"
           >
             {step !== 'loading' && (
-              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                <span className="font-bold text-slate-900">Compatibilidade</span>
+              <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                    <Target className="size-4 text-emerald-600" aria-hidden />
+                  </div>
+                  <div>
+                    <h2 id="compatibility-modal-title" className="text-sm font-bold text-slate-900">
+                      {step === 'result' ? `Compatibilidade com ${firstName}` : 'Compatibilidade'}
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {step === 'result'
+                        ? 'Análise personalizada com base no seu perfil de treino'
+                        : `Informe seus objetivos para verificar o match com ${firstName}.`}
+                    </p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex size-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                   aria-label="Fechar"
                 >
                   <X className="size-4" aria-hidden />
@@ -287,7 +324,7 @@ export function AICompatibilitySection({
               )}
 
               {step === 'result' && result && scoreStyle && (
-                <div className="flex flex-col">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                   <div className={`flex flex-col items-center ${scoreStyle.bg} px-6 pb-7 pt-8`}>
                     <ScoreCircle score={result.score} strokeClass={scoreStyle.stroke} />
                     <span className={`mt-4 inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-bold ${scoreStyle.pill}`}>
@@ -347,7 +384,7 @@ export function AICompatibilitySection({
               )}
 
               {step === 'error' && (
-                <div className="flex flex-col items-center px-6 py-10 text-center">
+                <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
                   <div className="flex size-16 items-center justify-center rounded-full bg-rose-50">
                     <AlertTriangle className="size-8 text-rose-500" aria-hidden />
                   </div>

@@ -19,8 +19,8 @@ import { PROFESSIONAL_CARD_GRADIENTS } from '../descobrir/discoverUiConstants';
 import { getPersonDisplayInitials } from '../descobrir/discoverFormatters';
 import {
   CompatibilityFormSteps,
-  COMPATIBILITY_GOALS,
   EMPTY_COMPATIBILITY_FORM,
+  formatSelectedGoalLabels,
   type CompatibilityFormData,
   type CompatibilityFormStep,
 } from '../../components/ui/CompatibilityFormSteps';
@@ -54,7 +54,7 @@ export interface StudentProfileHint {
 function profileToFormData(p?: StudentProfileHint): Partial<CompatibilityFormData> {
   if (!p) return {};
   return {
-    ...(p.fitnessGoals?.[0] ? { mainGoal: p.fitnessGoals[0] } : {}),
+    ...(p.fitnessGoals && p.fitnessGoals.length > 0 ? { mainGoal: p.fitnessGoals } : {}),
     ...(p.experienceLevel ? { level: LEVEL_TO_FORM[p.experienceLevel] ?? '' } : {}),
     ...(p.preferredModality ? { preferredModality: MODALITY_TO_FORM[p.preferredModality] ?? '' } : {}),
   };
@@ -301,7 +301,7 @@ export function SmartMatchModal({
               <h3 className="mt-6 text-center text-base font-bold text-slate-900">Analisando compatibilidade…</h3>
               <p className="mt-2 min-h-[20px] text-center text-sm text-slate-500">{LOADING_MESSAGES[loadingMsgIdx]}</p>
               <p className="mt-5 text-center text-xs text-slate-400">
-                Combinando <strong>{COMPATIBILITY_GOALS.find((g) => g.id === form.mainGoal)?.label ?? 'seus objetivos'}</strong> com os profissionais encontrados…
+                Combinando <strong>{formatSelectedGoalLabels(form.mainGoal)}</strong> com os profissionais encontrados…
               </p>
             </div>
           )}

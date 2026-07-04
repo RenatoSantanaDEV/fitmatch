@@ -10,6 +10,7 @@ import type { Student } from '../../../../domain/entities/Student';
 import type { Professional } from '../../../../domain/entities/Professional';
 import { ExperienceLevel } from '../../../../domain/enums/ExperienceLevel';
 import { SessionModality } from '../../../../domain/enums/SessionModality';
+import { SpecializationType } from '../../../../domain/enums/SpecializationType';
 import { SPECIALIZATION_BY_ID } from '../../../../domain/enums/specializationCatalog';
 import { isProfessionalEligible, prefilterCandidates } from '../../../../domain/rules/matchingRules';
 
@@ -21,9 +22,9 @@ const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 interface FormOverride {
-  mainGoal?: string;
+  mainGoal?: string[];
   level?: string;
-  specialization?: string;
+  specialization?: string[];
   preferredModality?: string;
   trainerStyle?: string;
   frequency?: string;
@@ -70,9 +71,7 @@ export async function POST(req: NextRequest) {
     .filter((id): id is string => typeof id === 'string')
     .slice(0, MAX_IDS);
 
-  const specializationOverride = body.formData?.specialization
-    ? SPECIALIZATION_BY_ID.get(body.formData.specialization)
-    : undefined;
+  const specializationOverrides = mapSpecializations(body.formData?.specialization);
 
   try {
     const [student, idProfessionals] = await Promise.all([
@@ -89,9 +88,9 @@ export async function POST(req: NextRequest) {
     // pull a fresh, specialization-scoped candidate pool from the DB directly
     // instead of relying solely on the (possibly unrelated) professionalIds passed in.
     let professionals = idProfessionals;
-    if (specializationOverride) {
+    if (specializationOverrides.length > 0) {
       const bySpecialization = await professionalRepo.list({
-        specializations: [specializationOverride],
+        specializations: specializationOverrides,
         isAcceptingClients: true,
         limit: MAX_CANDIDATES,
       });
@@ -116,7 +115,7 @@ export async function POST(req: NextRequest) {
       ...(body.formData?.preferredModality && MODALITY_MAP[body.formData.preferredModality]
         ? { preferredModality: MODALITY_MAP[body.formData.preferredModality] }
         : {}),
-      ...(specializationOverride ? { preferredSpecializations: [specializationOverride] } : {}),
+      ...(specializationOverrides.length > 0 ? { preferredSpecializations: specializationOverrides } : {}),
     };
 
     // Relaxation ladder: strict criteria first, then progressively drop
@@ -190,19 +189,26 @@ function applyFormOverride(base: MatchingStudent, form?: FormOverride): Matching
   if (!form) return base;
   const overrides: Partial<MatchingStudent> = {};
 
-  if (form.mainGoal) overrides.fitnessGoals = [form.mainGoal];
+  if (form.mainGoal && form.mainGoal.length > 0) overrides.fitnessGoals = form.mainGoal;
   if (form.level && LEVEL_MAP[form.level]) overrides.experienceLevel = LEVEL_MAP[form.level];
   if (form.preferredModality && MODALITY_MAP[form.preferredModality]) {
     overrides.preferredModality = MODALITY_MAP[form.preferredModality];
   }
-  const specialization = form.specialization ? SPECIALIZATION_BY_ID.get(form.specialization) : undefined;
-  if (specialization) overrides.preferredSpecializations = [specialization];
+  const specializations = mapSpecializations(form.specialization);
+  if (specializations.length > 0) overrides.preferredSpecializations = specializations;
   if (form.restrictions) {
     const existing = base.bio ? `${base.bio}\n\nRestrições: ${form.restrictions}` : form.restrictions;
     overrides.bio = existing;
   }
 
   return { ...base, ...overrides };
+}
+
+function mapSpecializations(ids?: string[]): SpecializationType[] {
+  if (!ids) return [];
+  return ids
+    .map((id) => SPECIALIZATION_BY_ID.get(id))
+    .filter((s): s is SpecializationType => !!s);
 }
 
 function toMatchingStudent(student: Student): MatchingStudent {

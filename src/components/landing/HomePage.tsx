@@ -213,11 +213,11 @@ export function HomePage({
                 ))}
               </ul>
               {isAuthenticated ? (
-                <Link href="/descobrir" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all hover:gap-3">
+                <Link href="/profissionais" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all hover:gap-3">
                   Abrir busca <ArrowRight className="size-4" aria-hidden />
                 </Link>
               ) : (
-                <OpenAuthModal mode="login" callbackUrl="/descobrir" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all hover:gap-3">
+                <OpenAuthModal mode="login" callbackUrl="/profissionais" className="mt-auto inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-emerald-600 transition-all hover:gap-3">
                   Experimentar busca <ArrowRight className="size-4" aria-hidden />
                 </OpenAuthModal>
               )}

@@ -45,6 +45,7 @@ import { ListFeaturedProfessionalsUseCase } from '../application/use-cases/profe
 import { ListSimilarProfessionalsUseCase } from '../application/use-cases/professional/ListSimilarProfessionalsUseCase';
 import { ListNearbyProfessionalsUseCase } from '../application/use-cases/professional/ListNearbyProfessionalsUseCase';
 import { ListBestValueProfessionalsUseCase } from '../application/use-cases/professional/ListBestValueProfessionalsUseCase';
+import { ListFavoriteProfessionalsUseCase } from '../application/use-cases/professional/ListFavoriteProfessionalsUseCase';
 
 const prisma = getPrismaClient();
 
@@ -202,3 +203,9 @@ export const listSimilarProfessionalsUseCase = new ListSimilarProfessionalsUseCa
 export const listNearbyProfessionalsUseCase = new ListNearbyProfessionalsUseCase(professionalRepo, userRepo);
 
 export const listBestValueProfessionalsUseCase = new ListBestValueProfessionalsUseCase(professionalRepo, userRepo);
+
+export const listFavoriteProfessionalsUseCase = new ListFavoriteProfessionalsUseCase(
+  studentFavoriteRepo,
+  professionalRepo,
+  userRepo,
+);

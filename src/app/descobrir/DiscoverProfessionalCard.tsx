@@ -194,7 +194,7 @@ export function DiscoverProfessionalCard({
         </div>
 
         {/* Bottom row: accepting + CTA */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
           {professional.isAcceptingClients ? (
             <p className="text-[11px] font-medium text-emerald-600">
               ✓ Aceita novos alunos

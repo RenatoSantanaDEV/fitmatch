@@ -214,7 +214,7 @@ function ProfessionalCard({
   const isTopPro = p.averageRating != null && p.averageRating >= 4.5 && p.totalReviews >= 3;
 
   return (
-    <li className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+    <li className="group flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       {/* Photo */}
       <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${gradient}`}>
         {p.avatarUrl ? (
@@ -270,7 +270,7 @@ function ProfessionalCard({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-center justify-between">
           {p.averageRating != null ? (
             <div className="flex items-center gap-1.5">
@@ -322,7 +322,7 @@ function ProfessionalCard({
             )}
           </div>
         )}
-        <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-3">
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
           <div>
             <p className="text-sm font-bold text-slate-900">
               {formatMoney(p.sessionPrice.min, p.sessionPrice.max, p.sessionPrice.currency)}

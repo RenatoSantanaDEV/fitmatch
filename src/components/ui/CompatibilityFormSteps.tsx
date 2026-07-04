@@ -27,9 +27,9 @@ import { SPECIALIZATION_CATALOG } from '../../domain/enums/specializationCatalog
 /* ─────────────────────────────── types */
 
 export type CompatibilityFormData = {
-  mainGoal: string;
+  mainGoal: string[];
   level: string;
-  specialization: string;
+  specialization: string[];
   preferredModality: string;
   trainerStyle: string;
   frequency: string;
@@ -38,9 +38,9 @@ export type CompatibilityFormData = {
 };
 
 export const EMPTY_COMPATIBILITY_FORM: CompatibilityFormData = {
-  mainGoal: '',
+  mainGoal: [],
   level: '',
-  specialization: '',
+  specialization: [],
   preferredModality: '',
   trainerStyle: '',
   frequency: '',
@@ -89,6 +89,13 @@ export const COMPATIBILITY_SPECIALIZATIONS = SPECIALIZATION_CATALOG.map((entry) 
   label: entry.label,
   icon: SPECIALIZATION_ICONS[entry.id] ?? Activity,
 }));
+
+export function formatSelectedGoalLabels(mainGoal: string[]): string {
+  const labels = mainGoal
+    .map((id) => COMPATIBILITY_GOALS.find((g) => g.id === id)?.label)
+    .filter((label): label is string => !!label);
+  return labels.length > 0 ? labels.join(' e ') : 'seus objetivos';
+}
 
 const LEVELS = [
   { id: 'iniciante',    label: 'Iniciante',     desc: 'Estou começando agora'         },
@@ -300,7 +307,7 @@ export function CompatibilityFormSteps({
   const set = (patch: Partial<CompatibilityFormData>) =>
     onFormChange({ ...form, ...patch });
 
-  const canStep1 = Boolean(form.mainGoal && form.level);
+  const canStep1 = Boolean(form.mainGoal.length > 0 && form.level);
   const canStep2 = Boolean(form.preferredModality && form.trainerStyle);
   const canStep3 = Boolean(form.frequency && form.emotionalGoal);
 
@@ -323,8 +330,12 @@ export function CompatibilityFormSteps({
             <GoalCard
               key={g.id}
               option={g}
-              selected={form.mainGoal === g.id}
-              onClick={() => set({ mainGoal: g.id })}
+              selected={form.mainGoal.includes(g.id)}
+              onClick={() => set({
+                mainGoal: form.mainGoal.includes(g.id)
+                  ? form.mainGoal.filter((id) => id !== g.id)
+                  : [...form.mainGoal, g.id],
+              })}
             />
           ))}
         </div>
@@ -378,8 +389,12 @@ export function CompatibilityFormSteps({
               <FrequencyChip
                 key={s.id}
                 option={s}
-                selected={form.specialization === s.id}
-                onClick={() => set({ specialization: form.specialization === s.id ? '' : s.id })}
+                selected={form.specialization.includes(s.id)}
+                onClick={() => set({
+                  specialization: form.specialization.includes(s.id)
+                    ? form.specialization.filter((id) => id !== s.id)
+                    : [...form.specialization, s.id],
+                })}
               />
             ))}
           </div>
