@@ -24,3 +24,15 @@ export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });
+
+export const phoneSchema = z
+  .string()
+  .max(30, 'Telefone deve ter no máximo 30 caracteres.')
+  .refine(
+    (v) => {
+      if (v.trim() === '') return true;
+      const digits = v.replace(/\D/g, '');
+      return digits.length >= 10 && digits.length <= 13;
+    },
+    { message: 'Informe um telefone válido (DDD + número).' },
+  );

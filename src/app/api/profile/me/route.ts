@@ -3,14 +3,11 @@ import { z } from 'zod';
 import { auth } from '../../../../lib/auth';
 import { userRepo } from '../../../../container';
 import { badRequest, handleError, noContent, unauthorized } from '../../../../lib/apiResponse';
+import { phoneSchema } from '../../../../validation/shared';
 
 const schema = z.object({
   name: z.string().min(2, 'Nome muito curto').max(120, 'Nome muito longo').optional(),
-  phone: z
-    .string()
-    .max(30, 'Telefone deve ter no máximo 30 caracteres')
-    .nullable()
-    .optional(),
+  phone: phoneSchema.nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
