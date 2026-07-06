@@ -8,12 +8,17 @@ import {
   Award,
   CheckCircle2,
   Clock,
+  Facebook,
+  Globe,
   GraduationCap,
   Heart,
+  Instagram,
+  Linkedin,
   Loader2,
   MapPin,
   MessageCircle,
   Monitor,
+  Phone,
   Share2,
   Shield,
   Sparkles,
@@ -47,6 +52,11 @@ export type ProfileData = {
   crefNumber: string | null;
   classDynamics: string | null;
   sessionDurationMinutes: number | null;
+  phone: string | null;
+  linkedinUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  websiteUrl: string | null;
   certifications: {
     id: string;
     name: string;
@@ -66,6 +76,10 @@ export type ProfileData = {
 };
 
 /* ────────────────────────────────────────────────────── helpers */
+
+function toTelHref(phone: string): string {
+  return `tel:${phone.replace(/[^\d+]/g, '')}`;
+}
 
 function formatMoney(min: number, max: number, cur: string): string {
   try {
@@ -731,6 +745,69 @@ export function ProfilePageClient({
                   </div>
                 )}
               </div>
+
+              {(data.phone || data.linkedinUrl || data.instagramUrl || data.facebookUrl || data.websiteUrl) && (
+                <div className="mt-4 flex items-center gap-2">
+                  {data.phone && (
+                    <a
+                      href={toTelHref(data.phone)}
+                      className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Ligar por telefone"
+                      title="Ligar por telefone"
+                    >
+                      <Phone className="size-4" aria-hidden />
+                    </a>
+                  )}
+                  {data.linkedinUrl && (
+                    <a
+                      href={data.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="LinkedIn"
+                      title="LinkedIn"
+                    >
+                      <Linkedin className="size-4" aria-hidden />
+                    </a>
+                  )}
+                  {data.instagramUrl && (
+                    <a
+                      href={data.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Instagram"
+                      title="Instagram"
+                    >
+                      <Instagram className="size-4" aria-hidden />
+                    </a>
+                  )}
+                  {data.facebookUrl && (
+                    <a
+                      href={data.facebookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Facebook"
+                      title="Facebook"
+                    >
+                      <Facebook className="size-4" aria-hidden />
+                    </a>
+                  )}
+                  {data.websiteUrl && (
+                    <a
+                      href={data.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Site pessoal"
+                      title="Site pessoal"
+                    >
+                      <Globe className="size-4" aria-hidden />
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
         </div>

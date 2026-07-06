@@ -223,6 +223,10 @@ model Professional {
   crefNumber             String?
   classDynamics          String?
   sessionDurationMinutes Int?
+  linkedinUrl            String?
+  instagramUrl           String?
+  facebookUrl            String?
+  websiteUrl             String?
 
   boostTier       BoostTier?
   boostExpiresAt  DateTime?

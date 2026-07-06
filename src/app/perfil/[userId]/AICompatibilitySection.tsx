@@ -14,6 +14,7 @@ import {
   CompatibilityFormSteps,
   COMPATIBILITY_GOALS,
   EMPTY_COMPATIBILITY_FORM,
+  formatSelectedGoalLabels,
   type CompatibilityFormData,
   type CompatibilityFormStep,
 } from '../../../components/ui/CompatibilityFormSteps';
@@ -128,14 +129,14 @@ export function AICompatibilitySection({
           IN_PERSON: 'presencial', ONLINE: 'online', HYBRID: 'hibrido',
         };
 
-        const mappedGoal = data.fitnessGoals.find((g) => COMPATIBILITY_GOALS.some((o) => o.id === g)) ?? '';
+        const mappedGoals = data.fitnessGoals.filter((g) => COMPATIBILITY_GOALS.some((o) => o.id === g));
         const mappedLevel = levelMap[data.experienceLevel] ?? '';
         const mappedModality = modalityMap[data.preferredModality] ?? '';
 
-        if (mappedGoal || mappedLevel || mappedModality) {
+        if (mappedGoals.length > 0 || mappedLevel || mappedModality) {
           setForm((f) => ({
             ...f,
-            mainGoal: mappedGoal || f.mainGoal,
+            mainGoal: mappedGoals.length > 0 ? mappedGoals : f.mainGoal,
             level: mappedLevel || f.level,
             preferredModality: mappedModality || f.preferredModality,
           }));
@@ -317,7 +318,7 @@ export function AICompatibilitySection({
                   </div>
                   <p className="mt-8 text-center text-xs text-slate-400">
                     Combinando{' '}
-                    <strong>{COMPATIBILITY_GOALS.find((g) => g.id === form.mainGoal)?.label ?? 'seus objetivos'}</strong>{' '}
+                    <strong>{formatSelectedGoalLabels(form.mainGoal)}</strong>{' '}
                     com o perfil de {firstName}…
                   </p>
                 </div>

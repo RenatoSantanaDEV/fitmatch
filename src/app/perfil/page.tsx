@@ -67,6 +67,12 @@ export default async function PerfilPage() {
           locationState={professional?.location.state ?? ''}
           classDynamics={professional?.classDynamics ?? null}
           sessionDurationMinutes={professional?.sessionDurationMinutes ?? null}
+          initialSocialLinks={{
+            linkedinUrl: professional?.linkedinUrl ?? null,
+            instagramUrl: professional?.instagramUrl ?? null,
+            facebookUrl: professional?.facebookUrl ?? null,
+            websiteUrl: professional?.websiteUrl ?? null,
+          }}
         />
       </main>
     );

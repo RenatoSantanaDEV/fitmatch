@@ -32,6 +32,7 @@ import {
 import Image from 'next/image';
 import { SessionModality } from '../../domain/enums/SessionModality';
 import { ProfileAddressSection, type ProfileInitialAddress } from './ProfileAddressSection';
+import { ProfileSocialLinksSection, type ProfileInitialSocialLinks } from './ProfileSocialLinksSection';
 import { InsightStatCard } from './InsightStatCard';
 import { BOOST_PLAN_OPTIONS, BoostPlanCard } from './BoostPlanCard';
 import type { ProfessionalInsightsDTO } from '../../application/dtos/professional/ProfessionalInsightsDTO';
@@ -178,6 +179,7 @@ function ImproveButton({ text, type, name, onImproved, disabled }: {
 export function PerfilProfissionalContent({
   initial,
   initialAddress,
+  initialSocialLinks,
   name: initialName,
   email,
   phone: initialPhone,
@@ -197,6 +199,7 @@ export function PerfilProfissionalContent({
 }: {
   initial: string;
   initialAddress: ProfileInitialAddress | null;
+  initialSocialLinks: ProfileInitialSocialLinks;
   name: string | null;
   email: string | null;
   phone: string | null;
@@ -827,7 +830,7 @@ export function PerfilProfissionalContent({
                   onChange={(e) => setPhone(e.target.value)}
                   className={inputClass}
                 />
-                <FieldHint>Usado para contato inicial com alunos interessados.</FieldHint>
+                <FieldHint>Aparece como botão de ligação no seu perfil público e é usado para contato inicial com alunos interessados.</FieldHint>
               </div>
             </div>
           </section>
@@ -1147,6 +1150,8 @@ export function PerfilProfissionalContent({
               </div>
             </div>
           </section>
+
+          <ProfileSocialLinksSection initial={initialSocialLinks} />
         </div>
 
         <div

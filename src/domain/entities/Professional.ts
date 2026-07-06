@@ -21,6 +21,10 @@ export interface Professional {
   readonly crefNumber?: string;
   readonly classDynamics?: string;
   readonly sessionDurationMinutes?: number;
+  readonly linkedinUrl?: string;
+  readonly instagramUrl?: string;
+  readonly facebookUrl?: string;
+  readonly websiteUrl?: string;
   readonly isVerified: boolean;
   readonly isAcceptingClients: boolean;
   readonly averageRating: number | null;

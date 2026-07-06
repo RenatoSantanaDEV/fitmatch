@@ -24,7 +24,7 @@ export default async function ProfessionalProfilePage({
   const professional = await prisma.professional.findUnique({
     where: { userId },
     include: {
-      user: { select: { name: true, avatarUrl: true } },
+      user: { select: { name: true, avatarUrl: true, phone: true } },
       areas: { include: { area: true } },
       certifications: { orderBy: { issueDate: 'desc' }, take: 10 },
       reviews: {
@@ -92,6 +92,11 @@ export default async function ProfessionalProfilePage({
     crefNumber: professional.crefNumber ?? null,
     classDynamics: professional.classDynamics ?? null,
     sessionDurationMinutes: professional.sessionDurationMinutes ?? null,
+    phone: professional.user.phone ?? null,
+    linkedinUrl: professional.linkedinUrl ?? null,
+    instagramUrl: professional.instagramUrl ?? null,
+    facebookUrl: professional.facebookUrl ?? null,
+    websiteUrl: professional.websiteUrl ?? null,
     certifications: professional.certifications.map((c) => ({
       id: c.id,
       name: c.name,
